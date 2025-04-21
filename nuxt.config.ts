@@ -2,6 +2,7 @@
 import Aura from '@primeuix/themes/aura';
 import {definePreset} from "@primeuix/themes";
 
+
 const MyPreset = definePreset(Aura, {
     semantic: {
         primary: {
@@ -21,8 +22,8 @@ const MyPreset = definePreset(Aura, {
 });
 
 export default defineNuxtConfig({
-  compatibilityDate: '2024-11-01',
-  devtools: { enabled: true },
+    compatibilityDate: '2024-11-01',
+    devtools: { enabled: true },
     modules: ['@primevue/nuxt-module', '@nuxt/fonts', '@pinia/nuxt'],
     primevue: {
         options: {
@@ -34,17 +35,11 @@ export default defineNuxtConfig({
             }
         }
     },
-  nitro: {
+    nitro: {
         experimental: {
             websocket: true
-        },
-      serverAssets: [
-          {
-              baseName: 'assets', // This will be the directory name inside .output/server
-              dir: './server/assets' // The source directory relative to your project root
-          }
-      ]
-  },
+        }
+    },
     sourcemap: {
         server: true,
         client: true
