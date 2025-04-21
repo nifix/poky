@@ -1,0 +1,3 @@
+﻿    # netlify.toml
+    [functions]
+    included_files = ["server/n2jpoky.db"]
