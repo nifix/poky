@@ -17,5 +17,5 @@
  *                              with the specified database file path.
  */
 export const useDb = (): sqlite3.Database => {
-    return new sqlite3.Database('server/n2jpoky.db')
+    return new sqlite3.Database('n2jpoky.db')
 }
