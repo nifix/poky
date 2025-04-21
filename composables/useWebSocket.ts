@@ -34,6 +34,28 @@ export const useWebSocket = (): UseWebSocketReturn => {
     const pokyStore = usePokyStore();
 
     /**
+     * Generates the WebSocket URL endpoint based on the current browser context.
+     *
+     * This function constructs a WebSocket URL by using the current window location's protocol, host, and a predefined path.
+     * It dynamically adapts to the environment (e.g., HTTP or HTTPS) to determine the appropriate WebSocket protocol (ws or wss).
+     *
+     * @return {string | null} A WebSocket URL string if in a browser context, or null if executed outside of a browser environment.
+     */
+    function getWebSocketURL(): string | null {
+        if (typeof window === 'undefined') {
+            console.error("WebSocket URL generation attempted outside of browser context.");
+            return null;
+        }
+
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host; // e.g., 'localhost:3000' or 'your-site-name.netlify.app'
+        const path = '/_ws'; // Your Nitro WebSocket endpoint path
+
+        return `${protocol}//${host}${path}`;
+    }
+
+    
+    /**
      * Establishes a WebSocket connection to the specified server endpoint.
      * It ensures a new connection is only initiated if no existing connection is active.
      *
@@ -53,7 +75,13 @@ export const useWebSocket = (): UseWebSocketReturn => {
         isConnected.value = false;
         messagesQueue = [];
 
-        const newWs = new WebSocket('ws://localhost:3000/_ws');
+        const wsUrl = getWebSocketURL();
+        if (!wsUrl) {
+            console.error("Could not determine WebSocket URL.");
+            return; // Exit if URL couldn't be generated
+        }
+        
+        const newWs = new WebSocket(wsUrl);
 
         newWs.onopen = () => {
             ws.value = newWs; // Assign to the ref *after* successful open
