@@ -3,7 +3,7 @@
 # Build settings for your Nuxt 3 application
 [build]
 # The command Netlify runs to build your site
-command = "yarn build"
+command = "npm run build"
 
 # The directory Netlify deploys after the build. 
 # For Nuxt 3 with Nitro's Netlify preset, this MUST be ".output/public".
