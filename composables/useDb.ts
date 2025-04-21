@@ -1,5 +1,4 @@
 ﻿import sqlite3 from "sqlite3";
-require('~/server/n2jpoky.db')
 
 /**
  * Creates and returns a new SQLite3 database connection.

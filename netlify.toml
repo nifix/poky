@@ -1,0 +1,41 @@
+﻿# netlify.toml
+
+# Build settings for your Nuxt 3 application
+[build]
+# The command Netlify runs to build your site
+command = "yarn build"
+
+# The directory Netlify deploys after the build. 
+# For Nuxt 3 with Nitro's Netlify preset, this MUST be ".output/public".
+publish = ".output/public"
+
+# Optional: Environment variables for the build process
+[build.environment]
+# You can specify a Node.js version if needed, though Netlify often uses a recent LTS.
+# Check Netlify docs for current defaults/supported versions.
+# NODE_VERSION = "18" 
+
+# Nitro usually auto-detects Netlify, but you could force the preset if needed.
+# NITRO_PRESET = "netlify"
+
+# Settings related to Netlify Functions
+[functions]
+# This is the crucial part: Specify files to include with the function(s).
+# Paths are relative to the root of your repository (where netlify.toml is).
+# This ensures your database file is packaged with the server function code.
+included_files = ["server/n2jpoky.db"]
+
+# --- Optional Sections ---
+
+# Example: Redirects
+# [[redirects]]
+#   from = "/old-page"
+#   to = "/new-page"
+#   status = 301 # Permanent redirect
+
+# Example: Headers
+# [[headers]]
+#   for = "/*"
+#   [headers.values]
+#     X-Frame-Options = "DENY"
+#     X-XSS-Protection = "1; mode=block"
