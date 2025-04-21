@@ -1,4 +1,6 @@
 ﻿import sqlite3 from "sqlite3";
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 /**
  * Creates and returns a new SQLite3 database connection.
@@ -17,5 +19,7 @@
  *                              with the specified database file path.
  */
 export const useDb = (): sqlite3.Database => {
-    return new sqlite3.Database('n2jpoky.db')
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    const dbPath = path.resolve(__dirname, '../assets/n2jpoky.db');
+    return new sqlite3.Database(dbPath);
 }

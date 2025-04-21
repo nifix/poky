@@ -38,7 +38,13 @@ export default defineNuxtConfig({
         experimental: {
             websocket: true
         },
-    },
+      serverAssets: [
+          {
+              baseName: 'assets', // This will be the directory name inside .output/server
+              dir: './server/assets' // The source directory relative to your project root
+          }
+      ]
+  },
     sourcemap: {
         server: true,
         client: true
