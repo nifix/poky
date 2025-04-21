@@ -1,4 +1,4 @@
-﻿# netlify.toml
+# netlify.toml
 
 # Build settings for your Nuxt 3 application
 [build]
