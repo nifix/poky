@@ -14,13 +14,13 @@ async function leaveRoom(): Promise<void> {
   const result = await roomService.removeUser(pokyStore.roomId, pokyStore.uuid);
 
   if (result.success)
-    ws.notify.userLeft(pokyStore.uuid, pokyStore.roomId);
+    await ws.notify.userLeft(pokyStore.uuid, pokyStore.roomId);
 }
 </script>
 
 <template>
   <div>
-    <div id="header-layout" style="">
+    <div id="header-layout">
       <div id="header-left-side-container">
         <div id="header-left-logo-container">
           <img 

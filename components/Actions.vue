@@ -9,7 +9,7 @@ const pokyStore = usePokyStore();
  * Resets the votes for the current room.
  */
 async function resetVotes(): Promise<void> {
-  ws.notify.resetVotes(pokyStore.uuid, pokyStore.roomId);
+  await ws.notify.resetVotes(pokyStore.uuid, pokyStore.roomId);
   await nextTick();
   await roomService.setRevealStatus<boolean>(pokyStore.roomId, false);
 }
@@ -18,7 +18,7 @@ async function resetVotes(): Promise<void> {
  * Reveals the votes for the current room.
  */
 async function revealVotes(): Promise<void> {
-  ws.notify.revealVotes(pokyStore.uuid, pokyStore.roomId, calculateCurrentScore());
+  await ws.notify.revealVotes(pokyStore.uuid, pokyStore.roomId, calculateCurrentScore());
   await nextTick();
   await roomService.setRevealStatus<boolean>(pokyStore.roomId, true);
 }

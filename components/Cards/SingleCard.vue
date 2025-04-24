@@ -18,11 +18,11 @@ const shouldBeSmall = computed(() => !!props.small);
  *
  * @return {void} This method does not return a value.
  */
-function onClick(): void {
+async function onClick(): Promise<void> {
   if (!disabled && (!pokyStore.revealed)) {
     pokyStore.setMyPick(id);
-    ws.notify.userVoted(pokyStore.uuid, pokyStore.roomId, pokyStore.getMySelf()?.current_pick ?? -1);
-    roomService.updateCurrentPick<number>(pokyStore.roomId, pokyStore.uuid, pokyStore.getMySelf()?.current_pick ?? -1);
+    await ws.notify.userVoted(pokyStore.uuid, pokyStore.roomId, pokyStore.getMySelf()?.current_pick ?? -1);
+    await roomService.updateCurrentPick<number>(pokyStore.roomId, pokyStore.uuid, pokyStore.getMySelf()?.current_pick ?? -1);
   }
 }
 

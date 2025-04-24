@@ -1,24 +1,26 @@
 ﻿import {EventKind} from "#shared/events";
 import type RoomUserModel from "#shared/models/rooms/RoomUserModel";
+import * as signalR from "@microsoft/signalr";
+import {HubConnectionState} from "@microsoft/signalr";
 
-const ws = shallowRef<WebSocket | null>(null);
+const ws = shallowRef<signalR.HubConnection | null>(null);
 const isConnected = ref(false);
-let messagesQueue: Array<string> = [];
+let messagesQueue: Array<WSMessage> = [];
 
 /**
  * Represents the return type of custom hook or function for managing WebSocket-based connections and notifications in a collaborative environment.
  */
 interface UseWebSocketReturn {
     isConnected: Ref<boolean>;
-    connect: () => void;
+    connect: () => Promise<void>;
     notify: {
-        newUser: (uuid: string, roomId: string, username: string) => void;
-        userVoted: (uuid: string, roomId: string, cardId: number) => void;
-        resetVotes: (uuid: string, roomId: string) => void;
-        revealVotes: (uuid: string, roomId: string, details: string) => void;
-        removeUser: (uuid: string, roomId: string) => void;
-        userLeft: (uuid: string, roomId: string) => void;
-        topicUpdate: (roomId: string, uuid: string, topic: string) => void;
+        newUser: (uuid: string, roomId: string, username: string) => Promise<void>;
+        userVoted: (uuid: string, roomId: string, cardId: number) => Promise<void>;
+        resetVotes: (uuid: string, roomId: string) => Promise<void>;
+        revealVotes: (uuid: string, roomId: string, details: string) => Promise<void>;
+        removeUser: (uuid: string, roomId: string) => Promise<void>;
+        userLeft: (uuid: string, roomId: string) => Promise<void>;
+        topicUpdate: (roomId: string, uuid: string, topic: string) => Promise<void>;
     };
 }
 
@@ -47,9 +49,9 @@ export const useWebSocket = (): UseWebSocketReturn => {
             return null;
         }
 
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const host = window.location.host; // e.g., 'localhost:3000' or 'your-site-name.netlify.app'
-        const path = '/_ws'; // Your Nitro WebSocket endpoint path
+        const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+        const host = "localhost:5199";
+        const path = '/_ws';
 
         return `${protocol}//${host}${path}`;
     }
@@ -64,10 +66,11 @@ export const useWebSocket = (): UseWebSocketReturn => {
      * are sent immediately. Handles events such as connection open, close,
      * errors, and incoming messages.
      */
-    function connect() : void {
-        if (ws.value && ws.value.readyState !== WebSocket.CLOSED && ws.value.readyState !== WebSocket.CLOSING) {
-            console.log('WebSocket already connecting or open.');
-            isConnected.value = (ws.value.readyState === WebSocket.OPEN);
+    async function connect() : Promise<void> {
+        if (ws.value && (ws.value.state !== HubConnectionState.Disconnected && ws.value.state !== HubConnectionState.Disconnecting))
+        {
+            console.log('WebSocket already connecting or reconnecting.');
+            isConnected.value = (ws.value.state === HubConnectionState.Connected);
             return;
         }
 
@@ -81,35 +84,37 @@ export const useWebSocket = (): UseWebSocketReturn => {
             return; // Exit if URL couldn't be generated
         }
         
-        const newWs = new WebSocket(wsUrl);
-
-        newWs.onopen = () => {
-            ws.value = newWs; // Assign to the ref *after* successful open
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl(wsUrl) // Matches the endpoint mapped in Program.cs
+            .withHubProtocol(new signalR.JsonHubProtocol())
+            .configureLogging(signalR.LogLevel.Information)
+            .withAutomaticReconnect()
+            .build();
+        
+        await connection.start().then(() => {
+            ws.value = connection; // Assign to the ref *after* successful open
             isConnected.value = true;
             console.log('WebSocket connected');
+            
             // Send queued messages
             while (messagesQueue.length > 0) {
                 const message = messagesQueue.shift();
                 if (message) {
-                    ws.value?.send(message); // Use ws.value here
+                    ws.value?.send("SendMessage", message);
                     console.log('Sent queued message:', message);
                 }
-            }
-        };
+            } 
+        })
 
-        newWs.onclose = () => {
+        connection.on("message", (message) => {
+            handleMessage(message);
+        });
+
+        connection.onclose(() => {
             isConnected.value = false;
             ws.value = null; // Clear the ref on close
             console.log('WebSocket disconnected');
-        };
-
-        newWs.onerror = (error) => {
-            console.error('WebSocket error:', error);
-            isConnected.value = false;
-            ws.value = null; // Clear the ref on error
-        };
-
-        newWs.addEventListener('message', (event) => handleMessage(event)); // Pass store instance
+        })
     }
 
     /**
@@ -117,17 +122,17 @@ export const useWebSocket = (): UseWebSocketReturn => {
      *
      * @param {WSMessage} message - The message object to be sent over the WebSocket.
      */
-    function sendMessage(message: WSMessage) : void {
+    async function sendMessage(message: WSMessage) : Promise<void> {
         const messageString = JSON.stringify(message);
         
-        if (!ws.value || ws.value.readyState !== WebSocket.OPEN) {
+        if (!ws.value || ws.value.state !== HubConnectionState.Connected) {
             console.log('WebSocket not open. Queuing message:', messageString);
-            messagesQueue.push(messageString);
+            messagesQueue.push(message);
             return;
         }
         
         console.log('Sending message:', messageString);
-        ws.value.send(messageString);
+        await ws.value.invoke('SendMessage', message);
     }
 
     /**
@@ -135,42 +140,48 @@ export const useWebSocket = (): UseWebSocketReturn => {
      *
      * @param {MessageEvent} event The WebSocket message event containing the data to process.
      */
-    async function handleMessage(event: MessageEvent) : Promise<void> {
+    async function handleMessage(event: WSMessage) : Promise<void> {
         try {
-            const data = typeof event.data === 'string' ? event.data : await event.data.text();
-            const parsedJson = JSON.parse(data);
-            const kind = parsedJson.kind;
+            const kind = event.kind;
 
-            console.log('Received message:', parsedJson);
+            console.log('Received message:', event);
             
             switch (kind) {
                 case EventKind.UserJoined:
-                    manageUserJoinedMessage(parsedJson);
+                    const userJoinedMessage = event as UserJoinMessage;
+                    manageUserJoinedMessage(userJoinedMessage);
                     break;
                 case EventKind.UserLeft:
-                    await manageUserLeftMessage(parsedJson);
+                    const userLeftMessage = event as UserLeftMessage;
+                    await manageUserLeftMessage(userLeftMessage);
                     break;
                 case EventKind.UserVoted:
-                    manageUserVotedMessage(parsedJson);
+                    const userVotedMessage = event as UserVotedMessage;
+                    manageUserVotedMessage(userVotedMessage);
                     break;
                 case EventKind.ResetVotes:
-                    manageResetVotesMessage(parsedJson);
+                    const resetVotesMessage = event as ResetVotesMessage;
+                    manageResetVotesMessage(resetVotesMessage);
                     break;
                 case EventKind.RevealVotes:
-                    manageRevealVotesMessage(parsedJson);
+                    const revealVotesMessage = event as RevealVotesMessage;
+                    manageRevealVotesMessage(revealVotesMessage);
                     break;
                 case EventKind.LogMessage:
-                    manageLogMessage(parsedJson);
+                    const logMessage = event as LogMessage;
+                    manageLogMessage(logMessage);
                     break;
                 case EventKind.UserRemoved:
-                    await manageUserRemovedMessage(parsedJson);
+                    const removeUserMessage = event as RemoveUserMessage;
+                    await manageUserRemovedMessage(removeUserMessage);
                     break;
                 case EventKind.TopicUpdated:
-                    manageTopicUpdatedMessage(parsedJson);
+                    const topicUpdatedMessage = event as TopicUpdatedMessage;
+                    manageTopicUpdatedMessage(topicUpdatedMessage);
                     break;
             }
         } catch (error) {
-            console.error("Failed to parse WebSocket message:", error, event.data);
+            console.error("Failed to parse WebSocket message:", error, event);
         }
     }
 
@@ -270,7 +281,7 @@ export const useWebSocket = (): UseWebSocketReturn => {
      * Updates the participants list of the current room and redirects if the current user was removed.
      *
      * @param {RemoveUserMessage} message - The message object containing details of the user removal, including room ID and the user's UUID.
-     * @return {void} - Does not return a value. Handles state updates and navigation internally.
+     * @return {Promise<void>} - Does not return a value. Handles state updates and navigation internally.
      */
     async function manageUserRemovedMessage(message: RemoveUserMessage) : Promise<void> {
         if (pokyStore.roomId != message.roomId)
@@ -292,7 +303,7 @@ export const useWebSocket = (): UseWebSocketReturn => {
      * Handles the scenario when a user leaves a room. Updates the participants list and manages the state of the application accordingly.
      *
      * @param {UserLeftMessage} message - The message object containing details about the user who left the room and the room context.
-     * @return {void} This function does not return a value. It updates the application state and may navigate the user to a different path.
+     * @return {Promise<void>} This function does not return a value. It updates the application state and may navigate the user to a different path.
      */
     async function manageUserLeftMessage(message: UserLeftMessage) : Promise<void> {
         if (pokyStore.roomId != message.roomId)
@@ -313,20 +324,28 @@ export const useWebSocket = (): UseWebSocketReturn => {
         }
     }
 
-    function notifyTopicUpdate(roomId: string, uuid: string, topic: string) {
-        sendMessage(<TopicUpdatedMessage>{
+    /**
+     * Notifies participants of a room about a topic update and logs the update.
+     *
+     * @param {string} roomId - The unique identifier of the room where the topic was updated.
+     * @param {string} uuid - The unique identifier of the participant who updated the topic.
+     * @param {string} topic - The updated topic for the room.
+     * @return {Promise<void>} A promise that resolves when the notification and log messages are sent.
+     */
+    async function notifyTopicUpdate(roomId: string, uuid: string, topic: string) : Promise<void> {
+        const participant = pokyStore.getParticipant(uuid);
+        await sendMessage(<LogMessage>{
+            kind: EventKind.LogMessage,
+            uuid: uuid,
+            roomId: roomId,
+            message: `(${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}) <b>${participant!.username}</b> updated room's topic to : <b>${topic}</b> !`
+        })
+        
+        await sendMessage(<TopicUpdatedMessage>{
             kind: EventKind.TopicUpdated,
             uuid: uuid,
             roomId: roomId,
             topic: topic
-        })
-
-        const participant = pokyStore.getParticipant(uuid);
-        sendMessage(<LogMessage>{
-            kind: EventKind.LogMessage,
-            uuid: uuid,
-            roomId: roomId,
-            message: `(${new Date().toDateString()}) <b>${participant!.username}</b> updated room's topic to : <b>${topic}</b> !`
         })
     }
     
@@ -336,21 +355,21 @@ export const useWebSocket = (): UseWebSocketReturn => {
      * @param {string} uuid - The unique identifier for the user.
      * @param {string} roomId - The identifier of the room the user has joined.
      * @param {string} username - The name of the user who joined.
-     * @return {void} This function does not return any value.
+     * @return {Promise<void>} This function does not return any value.
      */
-    function notifyNewUser(uuid: string, roomId: string, username: string) : void {
-        sendMessage(<UserJoinMessage>{
+    async function notifyNewUser(uuid: string, roomId: string, username: string) : Promise<void> {
+        await sendMessage(<UserJoinMessage>{
             kind: EventKind.UserJoined,
             uuid: uuid,
             roomId: roomId,
             username: username
         })
 
-        sendMessage(<LogMessage>{
+        await sendMessage(<LogMessage>{
             kind: EventKind.LogMessage,
             uuid: uuid,
             roomId: roomId,
-            message: `(${new Date().toDateString()}) <b>${username}</b> has joined the room. Woohoo 🎉🚀 !`
+            message: `(${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}) <b>${username}</b> has joined the room. Woohoo 🎉🚀 !`
         })
     }
 
@@ -360,10 +379,10 @@ export const useWebSocket = (): UseWebSocketReturn => {
      * @param {string} uuid - The unique identifier of the user who has voted.
      * @param {string} roomId - The unique identifier of the room where the vote occurred.
      * @param {number} cardId - The unique identifier of the card that was voted on.
-     * @return {void} This function does not return any value.
+     * @return {Promise<void>} This function does not return any value.
      */
-    function notifyUserVoted(uuid: string, roomId: string, cardId: number) : void {
-        sendMessage(<UserVotedMessage>{
+    async function notifyUserVoted(uuid: string, roomId: string, cardId: number) : Promise<void> {
+        await sendMessage(<UserVotedMessage>{
             kind: EventKind.UserVoted,
             uuid: uuid,
             roomId: roomId,
@@ -376,22 +395,22 @@ export const useWebSocket = (): UseWebSocketReturn => {
      *
      * @param {string} uuid - The unique identifier of the participant triggering the reset.
      * @param {string} roomId - The identifier of the room where the votes are being reset.
-     * @return {void} This function does not return a value.
+     * @return {Promise<void>} This function does not return a value.
      */
-    function notifyResetVotes(uuid: string, roomId: string) : void {
-        sendMessage(<ResetVotesMessage>{
+    async function notifyResetVotes(uuid: string, roomId: string) : Promise<void> {
+        const participant = pokyStore.getParticipant(uuid);
+        await sendMessage(<LogMessage>{
+            kind: EventKind.LogMessage,
+            uuid: participant!.uuid,
+            roomId: roomId,
+            message: `(${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}) <b>${participant!.username}</b> has reset the votes.`
+        })
+        
+        await sendMessage(<ResetVotesMessage>{
             kind: EventKind.ResetVotes,
             uuid: uuid,
             roomId: roomId,
         });
-
-        const participant = pokyStore.getParticipant(uuid);
-        sendMessage(<LogMessage>{
-            kind: EventKind.LogMessage,
-            uuid: participant!.uuid,
-            roomId: roomId,
-            message: `(${new Date().toDateString()}) <b>${participant!.username}</b> has reset the votes.`
-        })
     }
 
     /**
@@ -399,21 +418,21 @@ export const useWebSocket = (): UseWebSocketReturn => {
      *
      * @param {string} uuid - The unique identifier of the user to be removed.
      * @param {string} roomId - The unique identifier of the room from which the user is removed.
-     * @return {void} This function does not return a value.
+     * @return {Promise<void>} This function does not return a value.
      */
-    function notifyRemoveUser(uuid: string, roomId: string) : void {
-        sendMessage(<RemoveUserMessage>{
-            kind: EventKind.UserRemoved,
-            uuid: uuid,
-            roomId: roomId
-        })
-
+    async function notifyRemoveUser(uuid: string, roomId: string) : Promise<void> {
         const participant = pokyStore.getParticipant(uuid);
-        sendMessage(<LogMessage>{
+        await sendMessage(<LogMessage>{
             kind: EventKind.LogMessage,
             uuid: pokyStore.uuid,
             roomId: roomId,
-            message: `(${new Date().toDateString()}) <b>${pokyStore.username}</b> removed <b>${participant!.username}</b> from the room.`
+            message: `(${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}) <b>${pokyStore.username}</b> removed <b>${participant!.username}</b> from the room.`
+        })
+        
+        await sendMessage(<RemoveUserMessage>{
+            kind: EventKind.UserRemoved,
+            uuid: uuid,
+            roomId: roomId
         })
     }
 
@@ -422,20 +441,20 @@ export const useWebSocket = (): UseWebSocketReturn => {
      *
      * @param {string} uuid - The unique identifier of the user who left the room.
      * @param {string} roomId - The identifier of the room the user left.
-     * @return {void} This method does not return any value.
+     * @return {Promise<void>} This method does not return any value.
      */
-    function notifyUserLeft(uuid: string, roomId: string) : void {
-        sendMessage(<RemoveUserMessage>{
+    async function notifyUserLeft(uuid: string, roomId: string) : Promise<void> {
+        await sendMessage(<RemoveUserMessage>{
             kind: EventKind.UserLeft,
             uuid: uuid,
             roomId: roomId
         })
 
-        sendMessage(<LogMessage>{
+        await sendMessage(<LogMessage>{
             kind: EventKind.LogMessage,
             uuid: pokyStore.uuid,
             roomId: roomId,
-            message: `(${new Date().toDateString()}) <b>${pokyStore.username}</b> left the room.`
+            message: `(${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}) <b>${pokyStore.username}</b> left the room.`
         })
     }
 
@@ -445,21 +464,21 @@ export const useWebSocket = (): UseWebSocketReturn => {
      * @param {string} uuid - The unique identifier of the participant who revealed the votes.
      * @param {string} roomId - The unique identifier of the room where the votes were revealed.
      * @param {string} details - Additional details about the vote reveal process.
-     * @return {void} This function does not return a value.
+     * @return {Promise<void>} This function does not return a value.
      */
-    function notifyRevealVotes(uuid: string, roomId: string, details: string) : void {
-        sendMessage(<RevealVotesMessage>{
+    async function notifyRevealVotes(uuid: string, roomId: string, details: string) : Promise<void> {
+        await sendMessage(<RevealVotesMessage>{
             kind: EventKind.RevealVotes,
             uuid: uuid,
             roomId: roomId,
         });
         
         const participant = pokyStore.getParticipant(uuid);
-        sendMessage(<LogMessage>{
+        await sendMessage(<LogMessage>{
             kind: EventKind.LogMessage,
             uuid: uuid,
             roomId: roomId,
-            message: `(${new Date().toDateString()}) <b>${participant!.username}</b> has revealed the votes (details : ${details})`
+            message: `(${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}) <b>${participant!.username}</b> has revealed the votes : <b>(${details})</b>`
         })
     }
 
@@ -469,10 +488,10 @@ export const useWebSocket = (): UseWebSocketReturn => {
      * @param {boolean} [force=false] - If true, forces the WebSocket connection to close.
      * @return {void}
      */
-    function disconnect(force: boolean = false) : void {
+    async function disconnect(force: boolean = false) : Promise<void> {
         if (force && ws.value) {
             console.log('Closing shared WebSocket connection.');
-            ws.value.close();
+            await ws.value?.stop();
         }
     }
 

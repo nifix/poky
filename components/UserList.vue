@@ -31,7 +31,7 @@ async function removeUser(uuid: string) {
   
   const result = await roomService.removeUser<boolean>(pokyStore.roomId, uuid);
   if (result.success)
-    ws.notify.removeUser(uuid, pokyStore.roomId);
+    await ws.notify.removeUser(uuid, pokyStore.roomId);
 }
 
 onMounted(() => getUsers())

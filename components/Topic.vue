@@ -48,7 +48,7 @@ async function onValidate(): Promise<void> {
   closeDialog();
   
   await roomService.setTopic<boolean>(pokyStore.roomId, pokyStore.uuid, pokyStore.topic);
-  ws.notify.topicUpdate(pokyStore.roomId, pokyStore.uuid, pokyStore.topic);
+  await ws.notify.topicUpdate(pokyStore.roomId, pokyStore.uuid, pokyStore.topic);
 }
 
 /**
@@ -84,8 +84,6 @@ async function openExternal(): Promise<void> {
 
 <template>
 <div id="topic-main-container">
-  <Toast position="bottom-center" />
-  
   <h1>User story</h1>
   <div id="message-main-container">
     <Message 
@@ -94,7 +92,7 @@ async function openExternal(): Promise<void> {
         @click="openDialog">{{ pokyStore.topic }}
     </Message>
     
-    <div class="message-extra-button-container first" @click="copyTopic">
+    <div class="message-extra-button-container first" @click="openExternal">
       <i class="pi pi-external-link" title="Open link in a new window"></i>
     </div>
     
@@ -102,7 +100,7 @@ async function openExternal(): Promise<void> {
         layout="vertical" 
         class="message-extra-button-divider" />
     
-    <div class="message-extra-button-container" @click="openExternal">
+    <div class="message-extra-button-container" @click="copyTopic">
       <i class="pi pi-copy" title="Copy link"></i>
     </div>
   </div>

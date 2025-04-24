@@ -51,11 +51,11 @@ onMounted(async () => {
   await nextTick();
   
   // Connects to the websocket server
-  ws.connect();
+  await ws.connect();
   
   // Adds the user to the room and notifies the server
   await roomService.addUser<number>(pokyStore.roomId, pokyStore.uuid, pokyStore.username);
-  ws.notify.newUser(pokyStore.uuid, pokyStore.roomId, pokyStore.username);
+  await ws.notify.newUser(pokyStore.uuid, pokyStore.roomId, pokyStore.username);
 })
 </script>
 
@@ -63,9 +63,6 @@ onMounted(async () => {
   <Fluid id="main-container" class="flex-col">
     <!-- Room header -->
     <RoomHeader />
-
-    <!-- Room Topic -->
-    <TopicDialog />
 
     <!-- Card list -->
     <Cards />
