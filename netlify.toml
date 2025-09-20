@@ -1,5 +1,0 @@
-[functions]
-# This is the crucial part: Specify files to include with the function(s).
-# Paths are relative to the root of your repository (where netlify.toml is).
-# This ensures your database file is packaged with the server function code.
-included_files = ["assets/n2jpoky.db"]
