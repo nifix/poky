@@ -212,7 +212,7 @@ export const useWebSocket = (): UseWebSocketReturn => {
         if (!participant) 
             return;
         
-        participant.current_pick = message.cardId;
+        participant.currentPick = message.cardId;
     }
 
     /**
@@ -230,9 +230,9 @@ export const useWebSocket = (): UseWebSocketReturn => {
                 id: 0,
                 username: message.username,
                 uuid: message.uuid,
-                current_pick: null,
-                room_code: message.roomId,
-                joined_at: new Date().toISOString()
+                currentPick: null,
+                roomCode: message.roomId,
+                joinedAt: new Date().toISOString()
             });
         } else {
             console.log(`User ${message.username} (${message.uuid}) already in participant list.`);
@@ -263,7 +263,7 @@ export const useWebSocket = (): UseWebSocketReturn => {
             return;
         
         pokyStore.revealed = false;
-        pokyStore.participants.forEach(p => p.current_pick = -1);
+        pokyStore.participants.forEach(p => p.currentPick = -1);
     }
 
     /**

@@ -5,7 +5,7 @@
     createdAt?: Date,
     deletedOn?: Date,
     createdByUuid?: string,
-    is_revealed: boolean,
+    isRevealed: boolean,
     topic: string
 }
 

@@ -21,8 +21,8 @@ const shouldBeSmall = computed(() => !!props.small);
 async function onClick(): Promise<void> {
   if (!disabled && (!pokyStore.revealed)) {
     pokyStore.setMyPick(id);
-    await ws.notify.userVoted(pokyStore.uuid, pokyStore.roomId, pokyStore.getMySelf()?.current_pick ?? -1);
-    await roomService.updateCurrentPick<number>(pokyStore.roomId, pokyStore.uuid, pokyStore.getMySelf()?.current_pick ?? -1);
+    await ws.notify.userVoted(pokyStore.uuid, pokyStore.roomId, pokyStore.getMySelf()?.currentPick ?? -1);
+    await roomService.updateCurrentPick<number>(pokyStore.roomId, pokyStore.uuid, pokyStore.getMySelf()?.currentPick ?? -1);
   }
 }
 
@@ -39,13 +39,13 @@ function findCardText(): string {
   const uuid = props.uuid;
   const participant = pokyStore.participants.find(p => p.uuid == uuid);
   
-  if ((participant?.current_pick == null || participant?.current_pick! == -1) && !pokyStore.revealed && !pokyStore.votingDisabled)
+  if ((participant?.currentPick == null || participant?.currentPick! == -1) && !pokyStore.revealed && !pokyStore.votingDisabled)
     return "⌛";
   
-  if ((participant?.current_pick != null && participant?.current_pick! >= 0) && !!props.small && !pokyStore.revealed && !pokyStore.votingDisabled)
+  if ((participant?.currentPick != null && participant?.currentPick! >= 0) && !!props.small && !pokyStore.revealed && !pokyStore.votingDisabled)
     return "✅";
   
-  return getTextFromCardId(participant?.current_pick ?? -1);
+  return getTextFromCardId(participant?.currentPick ?? -1);
 }
 </script>
 

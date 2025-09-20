@@ -3,7 +3,7 @@ import {availableCards} from "~/services/cardsService";
 import SingleCard from "~/components/Cards/SingleCard.vue";
 const pokyStore = usePokyStore();
 
-const isCardPushed = (cardId: number) => computed(() => pokyStore.getMySelf()?.current_pick == cardId);
+const isCardPushed = (cardId: number) => computed(() => pokyStore.getMySelf()?.currentPick == cardId);
 </script>
 
 <template>

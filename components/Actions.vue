@@ -27,18 +27,21 @@ async function revealVotes(): Promise<void> {
  * Calculates the current score for the current room.
  */
 function calculateCurrentScore() : string {
-  const usersWhoVoted = pokyStore.participants.filter(p => (p.current_pick ?? -1) > 0);
-  let howMany = usersWhoVoted.length;
+  const usersWhoVoted = pokyStore.participants.filter(p => ((p.currentPick ?? -1) >= 2));
+  let howMany = usersWhoVoted.filter(p => ((p.currentPick ?? -1) >= 2)).length;
 
   let score = 0;
   let detail = "";
 
+  if (howMany == 0)
+    return `¯\\_(ツ)_/¯`;
+
   for (const userWhoVoted of usersWhoVoted) {
-    const currentPick = userWhoVoted.current_pick!;
+    const currentPick = userWhoVoted.currentPick!;
     const card = cardService.getCardById(currentPick);
 
     if (card) {
-      score += card.value!;
+      score += card.value!
       detail += `${card.value}+`
     }
   }

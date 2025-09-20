@@ -44,7 +44,7 @@ onMounted(async () => {
   } else {
     const roomModel = <RoomModel>(resultRoom.data);
     
-    pokyStore.revealed = roomModel.is_revealed;
+    pokyStore.revealed = roomModel.isRevealed;
     pokyStore.topic = roomModel.topic;
   }
   

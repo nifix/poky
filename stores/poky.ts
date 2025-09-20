@@ -1,7 +1,4 @@
 ﻿import type RoomUserModel from "#shared/models/rooms/RoomUserModel";
-import * as roomService from "~/services/roomService"
-import type {Room} from "socket.io-adapter";
-import type {RoomModel} from "#shared/models/rooms/RoomModel";
 
 export const usePokyStore = defineStore('pokyStore', {
     state: () => ({
@@ -28,7 +25,7 @@ export const usePokyStore = defineStore('pokyStore', {
         setMyPick(cardId: number) {
             const myself = this.participants.find(u => u.uuid == this.uuid);
             if (myself) {
-                myself.current_pick = cardId;
+                myself.currentPick = cardId;
             }
         },
         

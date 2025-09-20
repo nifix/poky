@@ -29,17 +29,18 @@ export interface Card {
  */
 export const availableCards: Card[] = [
     { id: 0, text: "?", value: null },
-    { id: 1, text: "0", value: 0 },
-    { id: 2, text: "0.5", value: 0.5 },
-    { id: 3, text: "1", value: 1 },
-    { id: 4, text: "2", value: 2 },
-    { id: 5, text: "3", value: 3 },
-    { id: 6, text: "5", value: 5 },
-    { id: 7, text: "8", value: 8 },
-    { id: 8, text: "13", value: 13 },
-    { id: 9, text: "20", value: 20 },
-    { id: 10, text: "40", value: 40 },
-    { id: 11, text: "100", value: 100 },
+    { id: 1, text: "☕", value: null },
+    { id: 2, text: "0", value: 0 },
+    { id: 3, text: "0.5", value: 0.5 },
+    { id: 4, text: "1", value: 1 },
+    { id: 5, text: "2", value: 2 },
+    { id: 6, text: "3", value: 3 },
+    { id: 7, text: "5", value: 5 },
+    { id: 8, text: "8", value: 8 },
+    { id: 9, text: "13", value: 13 },
+    { id: 10, text: "20", value: 20 },
+    { id: 11, text: "40", value: 40 },
+    { id: 12, text: "100", value: 100 },
 ]
 
 /**

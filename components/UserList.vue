@@ -23,6 +23,7 @@ async function getUsers() {
   loading.value = false;
   const resultData = usersResult.data ?? [];
   pokyStore.setParticipants(resultData);
+  console.log(resultData);
 }
 
 async function removeUser(uuid: string) {
@@ -51,21 +52,21 @@ onMounted(() => getUsers())
     <div v-else class="table-container">
       <DataTable :value="pokyStore.participants" scrollHeight="flex">
         <Column field="username" header="Username"></Column>
-        <Column field="current_pick" class="userlist-vote-column" header="Vote">
+        <Column field="currentPick" class="userlist-vote-column" header="Vote">
           <template #body="slotProps">
             <SingleCard
                 :disabled="true"
                 :uuid="slotProps.data.uuid"
-                :id="slotProps.data.current_pick"
-                :text="getTextFromCardId(slotProps.data.current_pick)"
+                :id="slotProps.data.currentPick"
+                :text="getTextFromCardId(slotProps.data.currentPick)"
                 :small="true"
                 :is-pushed="false"
             />
           </template>
         </Column>
-        <Column field="current_pick" class="userlist-remove-column">
+        <Column field="uuid" class="userlist-remove-column" >
           <template #body="slotProps">
-            <Button severity="danger" @click="removeUser(slotProps.data.uuid)">X</Button>
+            <Button severity="danger" v-if="pokyStore.uuid != slotProps.data.uuid" @click="removeUser(slotProps.data.uuid)">X</Button>
           </template>
         </Column>
       </DataTable>

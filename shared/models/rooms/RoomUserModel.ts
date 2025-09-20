@@ -2,7 +2,7 @@
     id: number, 
     username: string, 
     uuid: string, 
-    current_pick?: number | null, 
-    room_code: string,
-    joined_at: string
+    currentPick?: number | null, 
+    roomCode: string,
+    joinedAt: string
 }
