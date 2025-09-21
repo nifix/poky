@@ -131,7 +131,6 @@ export const useWebSocket = (): UseWebSocketReturn => {
             return;
         }
         
-        console.log('Sending message:', messageString);
         await ws.value.invoke('SendMessage', message);
     }
 
@@ -143,8 +142,6 @@ export const useWebSocket = (): UseWebSocketReturn => {
     async function handleMessage(event: WSMessage) : Promise<void> {
         try {
             const kind = event.kind;
-
-            console.log('Received message:', event);
             
             switch (kind) {
                 case EventKind.UserJoined:
