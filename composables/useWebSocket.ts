@@ -2,10 +2,12 @@
 import type RoomUserModel from "#shared/models/rooms/RoomUserModel";
 import * as signalR from "@microsoft/signalr";
 import {HubConnectionState} from "@microsoft/signalr";
+import {useApi} from "~/composables/useApi";
 
 const ws = shallowRef<signalR.HubConnection | null>(null);
 const isConnected = ref(false);
 let messagesQueue: Array<WSMessage> = [];
+const api = useApi();
 
 /**
  * Represents the return type of custom hook or function for managing WebSocket-based connections and notifications in a collaborative environment.
@@ -50,10 +52,9 @@ export const useWebSocket = (): UseWebSocketReturn => {
         }
 
         const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-        const host = "localhost:5199";
         const path = '/_ws';
 
-        return `${protocol}//${host}${path}`;
+        return `${protocol}//${api.url}${path}`;
     }
 
     
