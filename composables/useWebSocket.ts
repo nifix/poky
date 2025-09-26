@@ -51,10 +51,8 @@ export const useWebSocket = (): UseWebSocketReturn => {
             return null;
         }
 
-        const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
         const path = '/_ws';
-
-        return `${protocol}//${api.url}${path}`;
+        return `${api.url}${path}`;
     }
 
     
