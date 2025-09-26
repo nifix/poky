@@ -35,13 +35,7 @@ export default defineNuxtConfig({
             }
         }
     },
-    nitro: {
-        experimental: {
-            websocket: true
-        }
-    },
     sourcemap: {
-        server: true,
         client: true
     },
     css: ["primeicons/primeicons.css"]

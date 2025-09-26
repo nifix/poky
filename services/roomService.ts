@@ -37,7 +37,7 @@ async function getRoomById<T>(roomId: number): Promise<Result<T>> {
     if (!roomId)
         return <Result<T>>{ success: false, message: 'roomId is required' }
 
-    const { data } = await useFetch(`${api.url}/api/rooms/${roomId}`);
+    const { data } = await useFetch(`${api.url}/rooms/${roomId}`);
 
     if (!data.value)
         return <Result<T>>{ success: false, message: 'room not found' };
