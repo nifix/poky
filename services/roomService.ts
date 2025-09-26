@@ -1,6 +1,9 @@
 ﻿import type { Result } from "~/shared/models/result"
 import { usePokyStore } from "~/stores/poky"
 import type { RoomModel } from "#shared/models/rooms/RoomModel";
+import { useApi } from "~/composables/useApi";
+
+const api = useApi();
 
 /**
  * Retrieves the details of a room based on the provided room ID.
@@ -13,7 +16,7 @@ async function getRoomByCode<T>(roomCode: string): Promise<Result<T>> {
     if (!roomCode)
         return <Result<T>>{ success: false, message: 'roomId is required' }
 
-    const { data } = await useFetch(`http://localhost:5199/api/rooms/${roomCode}`, {
+    const { data } = await useFetch(`${api.url}/rooms/${roomCode}`, {
         method: 'GET'
     });
 
@@ -34,7 +37,7 @@ async function getRoomById<T>(roomId: number): Promise<Result<T>> {
     if (!roomId)
         return <Result<T>>{ success: false, message: 'roomId is required' }
 
-    const { data } = await useFetch(`http://localhost:5199/api/rooms/${roomId}`);
+    const { data } = await useFetch(`${api.url}/api/rooms/${roomId}`);
 
     if (!data.value)
         return <Result<T>>{ success: false, message: 'room not found' };
@@ -53,7 +56,7 @@ async function getRoomById<T>(roomId: number): Promise<Result<T>> {
 async function generateNewRoom(): Promise<Result<RoomModel>> {
     const pokyStore = usePokyStore();
     
-    const roomModel = await useFetch<RoomModel>('http://localhost:5199/api/rooms', {
+    const roomModel = await useFetch<RoomModel>(`${api.url}/rooms`, {
         method: 'POST',
         body: JSON.stringify({
             username: pokyStore.username,
@@ -76,7 +79,7 @@ async function generateNewRoom(): Promise<Result<RoomModel>> {
  * either the user data (on success) or an error message (on failure).
  */
 async function getCurrentUsers<T>(roomCode: string) : Promise<Result<T>> {
-    const { data } = await useFetch(`http://localhost:5199/api/rooms/${roomCode}/users`, { cache: 'no-cache' });
+    const { data } = await useFetch(`${api.url}/rooms/${roomCode}/users`, { cache: 'no-cache' });
     
     if (data.value != undefined)
         return <Result<T>>{ success: true, data: data.value }
@@ -93,7 +96,7 @@ async function getCurrentUsers<T>(roomCode: string) : Promise<Result<T>> {
  * @return {Promise<{success: boolean, message?: string, data?: any}>} - A promise that resolves with an object indicating the success status and additional data or error message.
  */
 async function addUser<T>(roomCode: string, uuid: string, username: string): Promise<Result<T>> {
-    const { data, error} = await useFetch(`http://localhost:5199/api/rooms/${roomCode}/users`, {
+    const { data, error} = await useFetch(`${api.url}/rooms/${roomCode}/users`, {
         method: 'POST',
         body: JSON.stringify({
             uuid: uuid,
@@ -115,7 +118,7 @@ async function addUser<T>(roomCode: string, uuid: string, username: string): Pro
  * @return {Promise<Result<T>>} A promise that resolves to a `Result` object containing the result of the operation, including success status and data or an error message.
  */
 async function removeUser<T>(roomCode: string, uuid: string): Promise<Result<T>> {
-    const { data, error} = await useFetch(`http://localhost:5199/api/rooms/${roomCode}/users`, {
+    const { data, error} = await useFetch(`${api.url}/rooms/${roomCode}/users`, {
         method: 'DELETE',
         query: {
             uuid: uuid
@@ -137,7 +140,7 @@ async function removeUser<T>(roomCode: string, uuid: string): Promise<Result<T>>
  * @return {Promise<Result<T>>} A promise that resolves with the result of the operation, including success status and optional error message or data.
  */
 async function updateCurrentPick<T>(roomCode: string, uuid: string, currentPick: number): Promise<Result<T>> {
-    const { data, error} = await useFetch(`http://localhost:5199/api/rooms/${roomCode}/users/${uuid}`, {
+    const { data, error} = await useFetch(`${api.url}/rooms/${roomCode}/users/${uuid}`, {
         method: 'PUT',
         body: JSON.stringify({
             currentPick: currentPick
@@ -158,7 +161,7 @@ async function updateCurrentPick<T>(roomCode: string, uuid: string, currentPick:
  * @return {Promise<Result<T>>} A promise that resolves to a result object indicating success or failure of the operation.
  */
 async function setRevealStatus<T>(roomCode: string, revealStatus: boolean): Promise<Result<T>> {
-    const { data, error} = await useFetch(`http://localhost:5199/api/rooms/${roomCode}/reveal`, {
+    const { data, error} = await useFetch(`${api.url}/rooms/${roomCode}/reveal`, {
         method: 'PUT',
         body: JSON.stringify({
             revealStatus: revealStatus,
@@ -180,7 +183,7 @@ async function setRevealStatus<T>(roomCode: string, revealStatus: boolean): Prom
  * @return {Promise<Result<T>>} A promise resolving to an object containing the result of the operation.
  */
 async function setTopic<T>(roomCode: string, uuid: string, topic: string): Promise<Result<T>> {
-    const { data, error} = await useFetch(`http://localhost:5199/api/rooms/${roomCode}/topic`, {
+    const { data, error} = await useFetch(`${api.url}/rooms/${roomCode}/topic`, {
         method: 'PUT',
         body: JSON.stringify({
             topic: topic,
