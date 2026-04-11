@@ -69,35 +69,53 @@ onMounted(async () => {
 </script>
 
 <template>
-  <Fluid id="main-container" class="flex-col">
-    <!-- Room header -->
+  <div id="room-page">
     <RoomHeader />
-
-    <!-- Card list -->
-    <Cards />
-    
-    <!-- Actions (reveal/reset) and score -->
-    <Actions />
-    
-    <!-- Topic -->
-    <Topic />
-
-    <!-- UserList -->
-    <UserList />
-
-    <!-- Logs -->
-    <Events />
-  </Fluid>
+    <div id="room-layout">
+      <main id="room-main">
+        <Topic />
+        <Cards />
+        <Actions />
+      </main>
+      <aside id="room-sidebar">
+        <UserList />
+        <Events />
+      </aside>
+    </div>
+  </div>
 </template>
 
 <style scoped>
-#main-container {
-  width: 60vw; 
-  margin: auto;
+#room-page {
+  min-height: 100vh;
+  background: var(--p-surface-ground);
+  background-image: linear-gradient(to bottom, color-mix(in srgb, var(--p-primary-50) 60%, transparent) 0%, var(--p-surface-ground) 220px);
 }
 
-h1 {
-  margin-top: 3rem;
-  margin-bottom: 3rem;
+#room-layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+#room-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+#room-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+  #room-layout {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
