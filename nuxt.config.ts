@@ -30,7 +30,7 @@ export default defineNuxtConfig({
             theme: {
                 preset: MyPreset,
                 options: {
-                    darkModeSelector: 'light',
+                    darkModeSelector: 'light'
                 }
             }
         }

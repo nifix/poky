@@ -111,9 +111,31 @@ export const useWebSocket = (): UseWebSocketReturn => {
 
         connection.onclose(() => {
             isConnected.value = false;
-            ws.value = null; // Clear the ref on close
+            ws.value = null;
             console.log('WebSocket disconnected');
-        })
+        });
+
+        // SignalR's automatic reconnect assigns a new connection ID, which means
+        // the server-side group membership is lost. Re-sending UserJoinMessage
+        // re-adds this connection to the correct room group.
+        connection.onreconnecting(() => {
+            isConnected.value = false;
+            console.log('WebSocket reconnecting...');
+        });
+
+        connection.onreconnected(async () => {
+            isConnected.value = true;
+            console.log('WebSocket reconnected, re-joining room group...');
+            
+            if (pokyStore.roomId && pokyStore.uuid && pokyStore.username) {
+                await sendMessage(<UserJoinMessage>{
+                    kind: EventKind.UserJoined,
+                    uuid: pokyStore.uuid,
+                    roomId: pokyStore.roomId,
+                    username: pokyStore.username
+                });
+            }
+        });
     }
 
     /**
@@ -286,6 +308,10 @@ export const useWebSocket = (): UseWebSocketReturn => {
         pokyStore.participants = pokyStore.participants.filter(p => p.uuid !== message.uuid);
         
         if (pokyStore.uuid === message.uuid) {
+            // Clear room state before navigating so the onreconnected handler cannot
+            // re-add this user to the room group if the connection drops and reconnects.
+            pokyStore.setRoomId('');
+            await disconnect(true);
             await navigateTo({
                 path: '/',
                 query: {

@@ -1,6 +1,7 @@
 ﻿<script setup lang="ts" xmlns="http://www.w3.org/1999/html">
 import * as roomService from "~/services/roomService";
 import type {RoomModel} from "#shared/models/rooms/RoomModel";
+import type RoomUserModel from "#shared/models/rooms/RoomUserModel";
 
 definePageMeta({
   middleware: [
@@ -55,6 +56,14 @@ onMounted(async () => {
   
   // Adds the user to the room and notifies the server
   await roomService.addUser<number>(pokyStore.roomId, pokyStore.uuid, pokyStore.username);
+  
+  // Re-fetch participants now that the current user is confirmed in the DB.
+  // This corrects the race condition where UserList.vue's earlier REST call
+  // ran before addUser completed (Vue children mount before parents).
+  const usersResult = await roomService.getCurrentUsers<RoomUserModel[]>(pokyStore.roomId);
+  if (usersResult.success)
+    pokyStore.setParticipants(usersResult.data ?? []);
+  
   await ws.notify.newUser(pokyStore.uuid, pokyStore.roomId, pokyStore.username);
 })
 </script>
