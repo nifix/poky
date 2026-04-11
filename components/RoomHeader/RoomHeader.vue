@@ -66,12 +66,13 @@ function copyUserId(): void {
   z-index: 100;
   padding: 0 1.5rem;
   box-shadow: 0 2px 16px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
 }
 
 #header-inner {
   max-width: 1400px;
   margin: 0 auto;
-  height: 4rem;
+  min-height: 4rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -177,5 +178,37 @@ function copyUserId(): void {
   background: rgba(255, 255, 255, 0.14);
   border-color: rgba(255, 255, 255, 0.3);
   color: #fff;
+}
+
+/* ── Responsive ─────────────────────────────── */
+
+/* Medium: hide meta chips text, icon only */
+@media (max-width: 700px) {
+  #header-meta {
+    gap: 0.25rem;
+  }
+
+  .meta-chip span {
+    display: none;
+  }
+
+  .meta-sep {
+    display: none;
+  }
+}
+
+/* Small: hide meta entirely, leave button icon-only */
+@media (max-width: 480px) {
+  #header-meta {
+    display: none;
+  }
+
+  #header-title {
+    display: none;
+  }
+
+  :deep(.leave-btn.p-button .p-button-label) {
+    display: none;
+  }
 }
 </style>
