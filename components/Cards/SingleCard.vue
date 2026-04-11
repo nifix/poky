@@ -10,14 +10,6 @@ const ws = useWebSocket();
 const pokyStore = usePokyStore();
 const shouldBeSmall = computed(() => !!props.small);
 
-/**
- * Handles the click event when a user interacts with a specific element.
- * The method checks if the action is enabled and proceeds to set the user's selection,
- * notifies the server about the user's vote, and updates the current pick information
- * in the room service.
- *
- * @return {void} This method does not return a value.
- */
 async function onClick(): Promise<void> {
   if (!disabled && (!pokyStore.revealed)) {
     pokyStore.setMyPick(id);
@@ -26,12 +18,6 @@ async function onClick(): Promise<void> {
   }
 }
 
-/**
- * Determines the appropriate card text based on the application state and properties.
- *
- * @return {string} The text to display on the card, which could be based on the `small` property,
- *                  the participant's current pick, or the application's revealed and voting states.
- */
 function findCardText(): string {
   if (!!props.small == false)
     return getTextFromCardId(id);
@@ -50,47 +36,101 @@ function findCardText(): string {
 </script>
 
 <template>
-  <Card
-      :class="{ pushed: isPushed, small: shouldBeSmall }" 
-      class="single-card-container"
+  <div
+      class="playing-card"
+      :class="{
+        'playing-card--selected': isPushed,
+        'playing-card--small': shouldBeSmall,
+      }"
       @click="onClick">
-    <template #content>
-      <p class="m-0">
-        {{ findCardText() }}
-      </p>
+    <template v-if="!shouldBeSmall">
+      <span class="pip pip--tl">{{ text }}</span>
+      <span class="pip pip--br">{{ text }}</span>
+      <span class="face-value">{{ findCardText() }}</span>
     </template>
-  </Card>
+    <span v-else class="face-value">{{ findCardText() }}</span>
+  </div>
 </template>
 
 <style scoped>
-.single-card-container {
+.playing-card {
+  position: relative;
   width: 3.5rem;
   height: 5.25rem;
-  font-size: 1.4rem;
+  background: var(--p-surface-card);
+  border: 1.5px solid var(--p-surface-border);
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.07), 0 1px 2px rgba(0, 0, 0, 0.04);
+  cursor: pointer;
   user-select: none;
   display: flex;
-  justify-content: center;
   align-items: center;
-  cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s;
+  justify-content: center;
+  font-weight: 700;
+  color: var(--p-text-color);
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.18s ease,
+              border-color 0.15s,
+              background 0.2s;
 }
 
-.single-card-container:not(.small):hover {
-  transform: translateY(-4px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+.playing-card:not(.playing-card--selected):not(.playing-card--small):hover {
+  transform: translateY(-8px) scale(1.05);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.13);
+  border-color: var(--p-primary-300);
 }
 
-.pushed {
-  --p-card-background: var(--p-primary-500);
-  color: var(--p-primary-contrast-color);
+.playing-card.playing-card--selected {
+  background: linear-gradient(145deg, var(--p-primary-400) 0%, var(--p-primary-600) 100%);
+  border-color: var(--p-primary-500);
+  color: #fff;
+  box-shadow: 0 6px 22px rgba(234, 88, 12, 0.38), 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-6px) scale(1.04);
 }
 
-.single-card-container.small {
-  width: 50px;
-  height: 50px;
-  font-size: 1rem;
-  margin: 0;
-  cursor: not-allowed;
+.face-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.pip {
+  position: absolute;
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--p-text-muted-color);
+  transition: color 0.2s;
+}
+
+.playing-card.playing-card--selected .pip {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.pip--tl {
+  top: 0.3rem;
+  left: 0.35rem;
+}
+
+.pip--br {
+  bottom: 0.3rem;
+  right: 0.35rem;
+  transform: rotate(180deg);
+}
+
+/* Small variant — used in UserList */
+.playing-card.playing-card--small {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 6px;
+  cursor: default;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transform: none !important;
   transition: none;
+}
+
+.playing-card.playing-card--small .face-value {
+  font-size: 0.78rem;
 }
 </style>

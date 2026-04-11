@@ -89,6 +89,7 @@ onMounted(async () => {
 #room-page {
   min-height: 100vh;
   background: var(--p-surface-ground);
+  background-image: linear-gradient(to bottom, color-mix(in srgb, var(--p-primary-50) 60%, transparent) 0%, var(--p-surface-ground) 220px);
 }
 
 #room-layout {

@@ -28,36 +28,30 @@ function copyUserId(): void {
     <div id="header-inner">
 
       <div id="header-brand">
-        <img src="/n2jsoft.jpg" alt="N2JSoft logo" id="header-logo" />
-        <Divider layout="vertical" style="height: 2rem;" />
+        <div id="logo-wrapper">
+          <img src="/n2jsoft.jpg" alt="N2JSoft" id="header-logo" />
+        </div>
         <span id="header-title">Sprint Poker</span>
+        <div class="live-dot" v-tooltip.bottom="'Connected'" />
       </div>
 
       <div id="header-meta">
-        <Tag
-            severity="secondary"
-            v-tooltip.bottom="'Click to copy Room ID'"
-            class="meta-tag clickable"
-            @click="copyRoomId">
+        <div class="meta-chip" @click="copyRoomId" v-tooltip.bottom="'Copy Room ID'">
           <i class="pi pi-hashtag" />
-          {{ pokyStore.roomId }}
-        </Tag>
-        <Tag
-            severity="info"
-            v-tooltip.bottom="'Click to copy your User ID'"
-            class="meta-tag clickable"
-            @click="copyUserId">
+          <span>{{ pokyStore.roomId }}</span>
+        </div>
+        <div class="meta-sep" />
+        <div class="meta-chip" @click="copyUserId" v-tooltip.bottom="'Copy your User ID'">
           <i class="pi pi-user" />
-          {{ pokyStore.username }}
-        </Tag>
+          <span>{{ pokyStore.username }}</span>
+        </div>
       </div>
 
       <Button
-          severity="secondary"
-          outlined
           icon="pi pi-sign-out"
           label="Leave"
           size="small"
+          class="leave-btn"
           @click="leaveRoom" />
 
     </div>
@@ -66,12 +60,12 @@ function copyUserId(): void {
 
 <style scoped>
 #room-header {
-  background: var(--p-surface-card);
-  border-bottom: 1px solid var(--p-surface-border);
+  background: linear-gradient(to right, #1c1917, #292524);
   position: sticky;
   top: 0;
   z-index: 100;
   padding: 0 1.5rem;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.3);
 }
 
 #header-inner {
@@ -91,15 +85,40 @@ function copyUserId(): void {
   flex-shrink: 0;
 }
 
+#logo-wrapper {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.5);
+}
+
 #header-logo {
-  width: 38px;
-  border-radius: 6px;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 #header-title {
   font-weight: 700;
   font-size: 1.05rem;
+  color: #fafaf9;
   white-space: nowrap;
+  letter-spacing: -0.2px;
+}
+
+.live-dot {
+  width: 7px;
+  height: 7px;
+  background: #22c55e;
+  border-radius: 50%;
+  animation: pulse-dot 2.5s infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5); }
+  50% { box-shadow: 0 0 0 5px rgba(34, 197, 94, 0); }
 }
 
 #header-meta {
@@ -111,19 +130,52 @@ function copyUserId(): void {
   flex-wrap: wrap;
 }
 
-.meta-tag {
-  font-size: 0.8rem;
-  gap: 0.35rem;
+.meta-chip {
   display: inline-flex;
   align-items: center;
-}
-
-.clickable {
+  gap: 0.4rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.8rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: opacity 0.15s;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
 }
 
-.clickable:hover {
-  opacity: 0.75;
+.meta-chip:hover {
+  background: rgba(255, 255, 255, 0.13);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.meta-chip i {
+  font-size: 0.72rem;
+  color: var(--p-primary-400);
+}
+
+.meta-sep {
+  width: 1px;
+  height: 1rem;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Style the leave button for dark bg */
+.leave-btn {
+  flex-shrink: 0;
+}
+
+:deep(.leave-btn.p-button) {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.75);
+}
+
+:deep(.leave-btn.p-button:hover) {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #fff;
 }
 </style>

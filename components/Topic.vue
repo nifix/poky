@@ -83,6 +83,7 @@ async function openExternal(): Promise<void> {
 </script>
 
 <template>
+<div class="topic-card-wrapper">
 <Card>
   <template #title>
     <div class="section-title">
@@ -94,8 +95,11 @@ async function openExternal(): Promise<void> {
     <div id="topic-content">
       <div id="topic-text" @click="openDialog" v-tooltip.top="'Click to edit'">
         <span v-if="pokyStore.topic" class="topic-value">{{ pokyStore.topic }}</span>
-        <span v-else class="topic-placeholder">No topic set — click to add one</span>
-        <i class="pi pi-pencil topic-edit-icon" />
+        <span v-else class="topic-placeholder">
+          <i class="pi pi-pencil" style="font-size:0.85rem" />
+          No topic set — click to add one
+        </span>
+        <i v-if="pokyStore.topic" class="pi pi-pencil topic-edit-icon" />
       </div>
       <div id="topic-actions">
         <Button
@@ -117,20 +121,26 @@ async function openExternal(): Promise<void> {
       </div>
     </div>
 
-    <Dialog v-model:visible="dialogVisibility" modal header="Set topic" @show="onOpen" :style="{ width: '35rem' }">
+    <Dialog v-model:visible="dialogVisibility" modal header="Set User Story" @show="onOpen" :style="{ width: '35rem' }">
       <div class="topic-input-container">
-        <InputText id="topic" v-model="temporaryTopic" class="flex-auto" autocomplete="off" fluid />
+        <InputText id="topic" v-model="temporaryTopic" class="flex-auto" autocomplete="off" fluid
+                   placeholder="e.g. As a user, I want to..." @keyup.enter="onValidate" />
       </div>
       <div class="topic-buttons-container">
         <Button type="button" label="Cancel" @click="closeDialog" severity="secondary" />
-        <Button type="button" label="Set topic" @click="onValidate" />
+        <Button type="button" label="Set topic" icon="pi pi-check" @click="onValidate" />
       </div>
     </Dialog>
   </template>
 </Card>
+</div>
 </template>
 
 <style scoped>
+.topic-card-wrapper :deep(.p-card) {
+  border-left: 3px solid var(--p-primary-400);
+}
+
 .section-title {
   display: flex;
   align-items: center;
@@ -156,12 +166,13 @@ async function openExternal(): Promise<void> {
   border: 1px solid var(--p-surface-200);
   cursor: pointer;
   min-height: 2.5rem;
-  transition: background 0.15s;
+  transition: background 0.15s, border-color 0.15s;
   overflow: hidden;
 }
 
 #topic-text:hover {
   background: var(--p-surface-200);
+  border-color: var(--p-primary-300);
 }
 
 .topic-value {
@@ -170,6 +181,7 @@ async function openExternal(): Promise<void> {
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 0.95rem;
+  font-weight: 500;
 }
 
 .topic-placeholder {
@@ -177,6 +189,9 @@ async function openExternal(): Promise<void> {
   color: var(--p-text-muted-color);
   font-style: italic;
   font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .topic-edit-icon {

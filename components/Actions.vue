@@ -5,52 +5,62 @@ import * as cardService from "~/services/cardsService";
 const ws = useWebSocket();
 const pokyStore = usePokyStore();
 
-/**
- * Resets the votes for the current room.
- */
+interface ScoreResult {
+  isEmpty: boolean;
+  suggestedSP: string | number;
+  average: string;
+  total: number;
+  count: number;
+  breakdown: string;
+}
+
+const computedScore = computed<ScoreResult>(() => {
+  const usersWhoVoted = pokyStore.participants.filter(p => ((p.currentPick ?? -1) >= 2));
+  const count = usersWhoVoted.length;
+
+  if (count === 0) {
+    return { isEmpty: true, suggestedSP: '—', average: '—', total: 0, count: 0, breakdown: '' };
+  }
+
+  let total = 0;
+  const values: number[] = [];
+  for (const user of usersWhoVoted) {
+    const card = cardService.getCardById(user.currentPick!);
+    if (card?.value != null) {
+      total += card.value;
+      values.push(card.value);
+    }
+  }
+
+  const average = total / count;
+  const suggested = cardService.findNextCardByScore(average)?.value ?? '?';
+
+  return {
+    isEmpty: false,
+    suggestedSP: suggested,
+    average: average.toFixed(1),
+    total,
+    count,
+    breakdown: values.join(' + '),
+  };
+});
+
 async function resetVotes(): Promise<void> {
   await ws.notify.resetVotes(pokyStore.uuid, pokyStore.roomId);
   await nextTick();
   await roomService.setRevealStatus<boolean>(pokyStore.roomId, false);
 }
 
-/**
- * Reveals the votes for the current room.
- */
 async function revealVotes(): Promise<void> {
-  await ws.notify.revealVotes(pokyStore.uuid, pokyStore.roomId, calculateCurrentScore());
+  await ws.notify.revealVotes(pokyStore.uuid, pokyStore.roomId, buildScoreString());
   await nextTick();
   await roomService.setRevealStatus<boolean>(pokyStore.roomId, true);
 }
 
-/**
- * Calculates the current score for the current room.
- */
-function calculateCurrentScore() : string {
-  const usersWhoVoted = pokyStore.participants.filter(p => ((p.currentPick ?? -1) >= 2));
-  let howMany = usersWhoVoted.filter(p => ((p.currentPick ?? -1) >= 2)).length;
-
-  let score = 0;
-  let detail = "";
-
-  if (howMany == 0)
-    return `¯\\_(ツ)_/¯`;
-
-  for (const userWhoVoted of usersWhoVoted) {
-    const currentPick = userWhoVoted.currentPick!;
-    const card = cardService.getCardById(currentPick);
-
-    if (card) {
-      score += card.value!
-      detail += `${card.value}+`
-    }
-  }
-
-  if (howMany == 0)
-    howMany = 1;
-
-  const average = (score / (howMany == 0 ? 1 : howMany));
-  return `${detail.slice(0, -1)} = ${score} / ${howMany} = ${average.toFixed(2)} (${cardService.findNextCardByScore(average)?.value} story points)`;
+function buildScoreString(): string {
+  const s = computedScore.value;
+  if (s.isEmpty) return `¯\\_(ツ)_/¯`;
+  return `${s.breakdown} = ${s.total} / ${s.count} = ${s.average} (${s.suggestedSP} story points)`;
 }
 </script>
 
@@ -70,8 +80,33 @@ function calculateCurrentScore() : string {
 
       <Transition name="score-fade" mode="out-in">
         <div v-if="pokyStore.revealed" id="score-revealed">
-          <i class="pi pi-star-fill score-icon" />
-          <span>{{ calculateCurrentScore() }}</span>
+          <div v-if="computedScore.isEmpty" class="score-empty">
+            <i class="pi pi-face-smile" />
+            <span>No votes cast</span>
+          </div>
+          <template v-else>
+            <div class="score-hero">
+              <span class="score-big">{{ computedScore.suggestedSP }}</span>
+              <span class="score-unit">SP</span>
+            </div>
+            <div class="score-stats">
+              <div class="score-stat">
+                <span class="stat-label">Avg</span>
+                <span class="stat-value">{{ computedScore.average }}</span>
+              </div>
+              <div class="score-stat-divider" />
+              <div class="score-stat">
+                <span class="stat-label">Total</span>
+                <span class="stat-value">{{ computedScore.total }}</span>
+              </div>
+              <div class="score-stat-divider" />
+              <div class="score-stat">
+                <span class="stat-label">Votes</span>
+                <span class="stat-value">{{ computedScore.count }}</span>
+              </div>
+            </div>
+            <div class="score-breakdown">{{ computedScore.breakdown }}</div>
+          </template>
         </div>
         <div v-else id="score-hidden">
           <i class="pi pi-eye-slash" />
@@ -97,30 +132,96 @@ function calculateCurrentScore() : string {
   margin-bottom: 1.25rem;
 }
 
-#score-revealed, #score-hidden {
+#score-revealed {
+  border-radius: var(--p-border-radius);
+  background: linear-gradient(135deg, var(--p-primary-50) 0%, color-mix(in srgb, var(--p-primary-100) 40%, white) 100%);
+  border: 1px solid var(--p-primary-200);
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.score-hero {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.score-big {
+  font-size: 2.6rem;
+  font-weight: 800;
+  color: var(--p-primary-600);
+  line-height: 1;
+  letter-spacing: -1px;
+}
+
+.score-unit {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--p-primary-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.score-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.score-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.stat-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--p-primary-400);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.stat-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--p-primary-700);
+}
+
+.score-stat-divider {
+  width: 1px;
+  height: 2rem;
+  background: var(--p-primary-200);
+}
+
+.score-breakdown {
+  font-size: 0.78rem;
+  color: var(--p-primary-500);
+  font-weight: 500;
+  border-top: 1px solid var(--p-primary-200);
+  padding-top: 0.5rem;
+  margin-top: 0.1rem;
+}
+
+.score-empty {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--p-primary-600);
+}
+
+#score-hidden {
   display: flex;
   align-items: center;
   gap: 0.6rem;
   padding: 0.85rem 1rem;
   border-radius: var(--p-border-radius);
-  font-size: 0.95rem;
-}
-
-#score-revealed {
-  background: var(--p-primary-50);
-  color: var(--p-primary-700);
-  font-weight: 600;
-  border: 1px solid var(--p-primary-200);
-}
-
-#score-hidden {
   background: var(--p-surface-100);
   color: var(--p-text-muted-color);
   border: 1px solid var(--p-surface-200);
-}
-
-.score-icon {
-  color: var(--p-primary-500);
+  font-size: 0.95rem;
 }
 
 .score-fade-enter-active,
