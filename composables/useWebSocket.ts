@@ -267,7 +267,7 @@ export const useWebSocket = (): UseWebSocketReturn => {
         if (pokyStore.roomId != message.roomId)
             return;
         
-        pokyStore.events = [message.message, ...pokyStore.events];
+        pokyStore.events.push(message.message);
     }
 
     /**
