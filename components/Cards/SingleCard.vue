@@ -18,21 +18,22 @@ async function onClick(): Promise<void> {
   }
 }
 
-function findCardText(): string {
-  if (!!props.small == false)
-    return getTextFromCardId(id);
-  
-  const uuid = props.uuid;
-  const participant = pokyStore.participants.find(p => p.uuid == uuid);
-  
-  if ((participant?.currentPick == null || participant?.currentPick! == -1) && !pokyStore.revealed && !pokyStore.votingDisabled)
-    return "⌛";
-  
-  if ((participant?.currentPick != null && participant?.currentPick! >= 0) && !!props.small && !pokyStore.revealed && !pokyStore.votingDisabled)
-    return "✅";
-  
-  return getTextFromCardId(participant?.currentPick ?? -1);
-}
+type CardDisplay = { type: 'text'; value: string } | { type: 'icon'; icon: string; colorClass: string };
+
+const cardDisplay = computed<CardDisplay>(() => {
+  if (!props.small)
+    return { type: 'text', value: getTextFromCardId(id) };
+
+  const participant = pokyStore.participants.find(p => p.uuid === props.uuid);
+
+  if ((participant?.currentPick == null || participant?.currentPick === -1) && !pokyStore.revealed && !pokyStore.votingDisabled)
+    return { type: 'icon', icon: 'pi-clock', colorClass: 'icon--pending' };
+
+  if (participant?.currentPick != null && participant?.currentPick >= 0 && !pokyStore.revealed && !pokyStore.votingDisabled)
+    return { type: 'icon', icon: 'pi-check', colorClass: 'icon--voted' };
+
+  return { type: 'text', value: getTextFromCardId(participant?.currentPick ?? -1) };
+});
 </script>
 
 <template>
@@ -46,9 +47,12 @@ function findCardText(): string {
     <template v-if="!shouldBeSmall">
       <span class="pip pip--tl">{{ text }}</span>
       <span class="pip pip--br">{{ text }}</span>
-      <span class="face-value">{{ findCardText() }}</span>
+      <span class="face-value">{{ (cardDisplay as any).value }}</span>
     </template>
-    <span v-else class="face-value">{{ findCardText() }}</span>
+    <span v-else class="face-value">
+      <i v-if="cardDisplay.type === 'icon'" :class="['pi', cardDisplay.icon, cardDisplay.colorClass]" />
+      <template v-else>{{ cardDisplay.value }}</template>
+    </span>
   </div>
 </template>
 
@@ -132,5 +136,18 @@ function findCardText(): string {
 
 .playing-card.playing-card--small .face-value {
   font-size: 0.78rem;
+}
+
+.playing-card.playing-card--small .face-value .pi {
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.icon--pending {
+  color: var(--p-text-muted-color);
+}
+
+.icon--voted {
+  color: var(--p-primary-500);
 }
 </style>
