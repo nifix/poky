@@ -2,7 +2,6 @@
 import * as roomService from "~/services/roomService";
 import type { RoomModel } from "~/shared/models/rooms/RoomModel";
 import type { Result } from "#shared/models/result";
-import { useConfirm } from "primevue/useconfirm";
 import { v4 as uuidv4 } from 'uuid';
 import * as utilsService from "~/services/utilsService";
 import {definePageMeta} from "#imports";
@@ -13,8 +12,6 @@ const uuidCookie = useCookie("uuid");
 
 const route = useRoute();
 const error = route.query.error;
-
-const confirm = useConfirm();
 
 const username = ref(pokyStore.username || '')
 const roomId = ref(pokyStore.roomId || '')
@@ -86,100 +83,281 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div id="pick-a-room-container">
-    <Message id="error-message" severity="error" v-if="error">
-      {{ utilsService.errorMessagesMapping.get(error as string) }}
-    </Message>
-  <Card>
-    <template #content>
-        <div id="pick-a-room-inner-container">
-          <img id="poker-logo" src="/n2jsoft.jpg" alt="n2jsoft logo" />
-          <div id="nickname-block">
-            <FloatLabel>
-              <InputText id="username" v-model="username" />
-              <label for="username">Username (required)</label>
-            </FloatLabel>
-          </div>
-          <Divider />
-          <div id="join-room-button-container">
-            <Button
-                type="button"
-                label="Create new room"
-                :fluid="true"
-                :disabled="!!username == false"
-                @click="createNewRoom"/>
+  <div id="login-page">
+    <Transition name="fade">
+      <div v-if="error" class="error-banner">
+        <Message severity="error" :closable="false" icon="pi pi-exclamation-triangle">
+          {{ utilsService.errorMessagesMapping.get(error as string) }}
+        </Message>
+      </div>
+    </Transition>
 
-            <Divider>
-              OR
-            </Divider>
-            <div id="room-id-block">
-              <FloatLabel>
-                <InputText id="room-id" v-model="roomId" />
-                <label for="room-id">Room ID</label>
-              </FloatLabel>
+    <div id="login-layout">
+      <!-- Left: Branded hero panel -->
+      <div id="hero-panel">
+        <div id="hero-content">
+          <img src="/n2jsoft.jpg" alt="N2J Soft logo" id="hero-logo" />
+          <h1 id="hero-title">N2J Poky</h1>
+          <p id="hero-tagline">Sprint Planning, simplified.</p>
+          <div id="hero-features">
+            <div class="feature-item">
+              <i class="pi pi-bolt" />
+              <span>Real-time estimation voting</span>
             </div>
-
-            <Button
-                type="button"
-                label="Join room"
-                :fluid="true"
-                :disabled="!isJoinRoomButtonEnabled()"
-                @click="joinRoom"/>
+            <div class="feature-item">
+              <i class="pi pi-users" />
+              <span>Collaborative team rooms</span>
+            </div>
+            <div class="feature-item">
+              <i class="pi pi-chart-bar" />
+              <span>Instant results reveal</span>
+            </div>
           </div>
         </div>
-    </template>
-  </Card>
+      </div>
+
+      <!-- Right: Login form -->
+      <div id="form-panel">
+        <Card id="login-card">
+          <template #content>
+            <div id="form-content">
+              <div id="form-header">
+                <h2>Get started</h2>
+                <p>Enter your name, then create or join a room.</p>
+              </div>
+
+              <div class="form-field">
+                <label for="username" class="field-label">
+                  <i class="pi pi-user" /> Your name
+                </label>
+                <InputText
+                    id="username"
+                    v-model="username"
+                    placeholder="e.g. John Doe"
+                    fluid
+                    @keyup.enter="username && !roomId ? createNewRoom() : joinRoom()" />
+              </div>
+
+              <Button
+                  label="Create new room"
+                  icon="pi pi-plus"
+                  fluid
+                  :disabled="!username"
+                  @click="createNewRoom" />
+
+              <Divider>
+                <span class="or-text">OR</span>
+              </Divider>
+
+              <div class="form-field">
+                <label for="room-id" class="field-label">
+                  <i class="pi pi-hashtag" /> Room ID
+                </label>
+                <InputText
+                    id="room-id"
+                    v-model="roomId"
+                    placeholder="e.g. ABC-123"
+                    fluid
+                    @keyup.enter="isJoinRoomButtonEnabled() && joinRoom()" />
+              </div>
+
+              <Button
+                  label="Join room"
+                  icon="pi pi-arrow-right"
+                  icon-pos="right"
+                  severity="secondary"
+                  fluid
+                  :disabled="!isJoinRoomButtonEnabled()"
+                  @click="joinRoom" />
+            </div>
+          </template>
+        </Card>
+      </div>
+    </div>
   </div>
-    
 </template>
 
 <style scoped>
-#error-message, #poker-logo {
-  margin-bottom: 1em;  
+#login-page {
+  min-height: 100vh;
+  background: var(--p-surface-ground);
 }
 
-#poker-logo {
-  width: 95px;
-  padding: 1rem;
+.error-banner {
+  position: fixed;
+  top: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  min-width: 320px;
 }
 
-#nickname-block, #room-id-block {
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s, transform 0.3s;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-8px);
+}
+
+#login-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100vh;
+}
+
+/* ── Hero panel ── */
+#hero-panel {
+  background: linear-gradient(145deg, var(--p-primary-500) 0%, var(--p-primary-800) 100%);
   display: flex;
-  flex-direction: column;
-}
-
-#pick-a-room-inner-container, #nickname-block,
-#join-room-button-container, #join-room-button
-{
-  width: 80%;
-}
-
-input {
-  width: 100%;
-}
-
-#join-room-button-container {
-  display: flex;
-  flex-direction: column;
-  row-gap: 1rem;
-}
-
-#pick-a-room-container {
-  display: flex;
+  align-items: center;
   justify-content: center;
-  align-items: center;
-  flex-direction: column;
-  
-  height: 100vh;
-  width: 100vw;
+  padding: 3rem;
 }
 
-#pick-a-room-inner-container {
-  width: 20rem;
-  
+#hero-content {
+  max-width: 360px;
+}
+
+#hero-logo {
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
+  object-fit: cover;
+  margin-bottom: 1.75rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+}
+
+#hero-title {
+  font-size: 2.6rem;
+  font-weight: 800;
+  margin: 0 0 0.4rem;
+  color: #fff;
+  letter-spacing: -0.5px;
+}
+
+#hero-tagline {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.82);
+  margin: 0 0 2.5rem;
+  line-height: 1.5;
+}
+
+#hero-features {
   display: flex;
   flex-direction: column;
+  gap: 1rem;
+}
+
+.feature-item {
+  display: flex;
   align-items: center;
-  row-gap: 1rem;
+  gap: 0.85rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.95rem;
+}
+
+.feature-item i {
+  font-size: 1rem;
+  width: 1.6rem;
+  height: 1.6rem;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── Form panel ── */
+#form-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  background: var(--p-surface-ground);
+}
+
+#login-card {
+  width: 100%;
+  max-width: 400px;
+}
+
+#form-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 0.25rem 0;
+}
+
+#form-header {
+  margin-bottom: 0.25rem;
+}
+
+#form-header h2 {
+  margin: 0 0 0.3rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--p-text-color);
+}
+
+#form-header p {
+  margin: 0;
+  color: var(--p-text-muted-color);
+  font-size: 0.875rem;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.field-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--p-text-color);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.or-text {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--p-text-muted-color);
+  letter-spacing: 0.05em;
+  padding: 0 0.5rem;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  #login-layout {
+    grid-template-columns: 1fr;
+  }
+
+  #hero-panel {
+    padding: 2.5rem 2rem 2rem;
+    min-height: auto;
+  }
+
+  #hero-features {
+    display: none;
+  }
+
+  #hero-title {
+    font-size: 2rem;
+  }
+
+  #form-panel {
+    padding: 2rem 1.5rem 3rem;
+    align-items: flex-start;
+  }
+
+  #login-card {
+    max-width: 100%;
+  }
 }
 </style>

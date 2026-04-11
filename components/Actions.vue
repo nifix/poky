@@ -55,40 +55,82 @@ function calculateCurrentScore() : string {
 </script>
 
 <template>
-  <div id="actions-button-container">
-    <Button :disabled="pokyStore.revealed" @click="revealVotes" severity="contrast">
-      Reveal votes
-    </Button>
-    
-    <Button @click="resetVotes" severity="contrast">
-      Reset
-    </Button>
-  </div>
+  <Card>
+    <template #title>
+      <div class="section-title">
+        <i class="pi pi-chart-bar" />
+        Results
+      </div>
+    </template>
+    <template #content>
+      <div id="actions-button-container">
+        <Button :disabled="pokyStore.revealed" @click="revealVotes" icon="pi pi-eye" label="Reveal votes" />
+        <Button @click="resetVotes" severity="secondary" outlined icon="pi pi-refresh" label="Reset" />
+      </div>
 
-  <div id="actions-score-container">
-    <h3>
-      <span v-if="pokyStore.revealed">{{ calculateCurrentScore() }}</span>
-      <span v-else>Reveal to view the score</span>
-    </h3>
-  </div>
+      <Transition name="score-fade" mode="out-in">
+        <div v-if="pokyStore.revealed" id="score-revealed">
+          <i class="pi pi-star-fill score-icon" />
+          <span>{{ calculateCurrentScore() }}</span>
+        </div>
+        <div v-else id="score-hidden">
+          <i class="pi pi-eye-slash" />
+          <span>Reveal to see the score</span>
+        </div>
+      </Transition>
+    </template>
+  </Card>
 </template>
 
 <style scoped>
-#actions-score-container {
-  display: flex; 
-  justify-content: center; 
-  margin-top: 2rem;
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 #actions-button-container {
-  display: flex; 
-  flex-direction: row; 
-  column-gap: 1rem; 
-  margin-top: 1rem; 
-  justify-content: center;
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
 }
 
-#actions-button-container .p-button {
-  width: 10rem;
+#score-revealed, #score-hidden {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--p-border-radius);
+  font-size: 0.95rem;
+}
+
+#score-revealed {
+  background: var(--p-primary-50);
+  color: var(--p-primary-700);
+  font-weight: 600;
+  border: 1px solid var(--p-primary-200);
+}
+
+#score-hidden {
+  background: var(--p-surface-100);
+  color: var(--p-text-muted-color);
+  border: 1px solid var(--p-surface-200);
+}
+
+.score-icon {
+  color: var(--p-primary-500);
+}
+
+.score-fade-enter-active,
+.score-fade-leave-active {
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.score-fade-enter-from,
+.score-fade-leave-to {
+  opacity: 0;
+  transform: translateY(4px);
 }
 </style>

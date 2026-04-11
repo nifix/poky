@@ -83,89 +83,122 @@ async function openExternal(): Promise<void> {
 </script>
 
 <template>
-<div id="topic-main-container">
-  <h1>User story</h1>
-  <div id="message-main-container">
-    <Message 
-        id="topic" 
-        severity="secondary" 
-        @click="openDialog">{{ pokyStore.topic }}
-    </Message>
-    
-    <div class="message-extra-button-container first" @click="openExternal">
-      <i class="pi pi-external-link" title="Open link in a new window"></i>
+<Card>
+  <template #title>
+    <div class="section-title">
+      <i class="pi pi-file" />
+      User Story
     </div>
-    
-    <Divider 
-        layout="vertical" 
-        class="message-extra-button-divider" />
-    
-    <div class="message-extra-button-container" @click="copyTopic">
-      <i class="pi pi-copy" title="Copy link"></i>
+  </template>
+  <template #content>
+    <div id="topic-content">
+      <div id="topic-text" @click="openDialog" v-tooltip.top="'Click to edit'">
+        <span v-if="pokyStore.topic" class="topic-value">{{ pokyStore.topic }}</span>
+        <span v-else class="topic-placeholder">No topic set — click to add one</span>
+        <i class="pi pi-pencil topic-edit-icon" />
+      </div>
+      <div id="topic-actions">
+        <Button
+            text
+            rounded
+            severity="secondary"
+            icon="pi pi-external-link"
+            v-tooltip.top="'Open link in new tab'"
+            @click="openExternal"
+            size="small" />
+        <Button
+            text
+            rounded
+            severity="secondary"
+            icon="pi pi-copy"
+            v-tooltip.top="'Copy topic'"
+            @click="copyTopic"
+            size="small" />
+      </div>
     </div>
-  </div>
 
-  <div id="topic-dialog-container" class="card">
     <Dialog v-model:visible="dialogVisibility" modal header="Set topic" @show="onOpen" :style="{ width: '35rem' }">
       <div class="topic-input-container">
-        <InputText id="topic" v-model="temporaryTopic" class="flex-auto" autocomplete="off" />
+        <InputText id="topic" v-model="temporaryTopic" class="flex-auto" autocomplete="off" fluid />
       </div>
       <div class="topic-buttons-container">
-        <Button type="button" label="Cancel" @click="closeDialog" severity="secondary"></Button>
-        <Button type="button" label="Set topic" @click="onValidate"></Button>
+        <Button type="button" label="Cancel" @click="closeDialog" severity="secondary" />
+        <Button type="button" label="Set topic" @click="onValidate" />
       </div>
     </Dialog>
-  </div>
-</div>
+  </template>
+</Card>
 </template>
 
 <style scoped>
-#topic-main-container {
-  margin: 3em 0;
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
 }
 
-#topic-dialog-container {
+#topic-content {
   display: flex;
-  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+#topic-text {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--p-border-radius);
+  background: var(--p-surface-100);
+  border: 1px solid var(--p-surface-200);
+  cursor: pointer;
+  min-height: 2.5rem;
+  transition: background 0.15s;
+  overflow: hidden;
+}
+
+#topic-text:hover {
+  background: var(--p-surface-200);
+}
+
+.topic-value {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.95rem;
+}
+
+.topic-placeholder {
+  flex: 1;
+  color: var(--p-text-muted-color);
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+.topic-edit-icon {
+  color: var(--p-text-muted-color);
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+#topic-actions {
+  display: flex;
+  gap: 0.25rem;
 }
 
 .topic-input-container {
-  display: flex; 
-  flex-direction: column; 
-  margin: 1em 0; 
-  row-gap: 1em;
+  display: flex;
+  flex-direction: column;
+  margin: 1em 0;
 }
 
 .topic-buttons-container {
-  display: flex; 
-  justify-content: end; 
+  display: flex;
+  justify-content: end;
   column-gap: 1em;
-}
-
-#message-main-container {
-  display: flex; 
-  align-items: center; 
-  column-gap: 10px;
-}
-
-#topic {
-  width: 100%; 
-  overflow: hidden; 
-  white-space: nowrap; 
-  text-overflow: ellipsis;
-}
-
-.message-extra-button-container {
-  cursor: pointer; 
-  display: flex; 
-  justify-content: center;
-}
-
-.message-extra-button-container.first {
-  margin-left: 0.5em;
-}
-
-.message-extra-button-divider {
-  margin: 0 0.5em 0 0.4em;
 }
 </style>

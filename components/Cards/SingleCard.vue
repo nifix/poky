@@ -63,27 +63,34 @@ function findCardText(): string {
 </template>
 
 <style scoped>
-.pushed {
-  --p-card-background: black;
-  color: white;
+.single-card-container {
+  width: 3.5rem;
+  height: 5.25rem;
+  font-size: 1.4rem;
+  user-select: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
 }
 
-.single-card-container {
-  width: 4rem;
-  height: 4rem;
-  font-size: 1.4rem;
-  margin: 0 0.5em 0.5em 0em;
-  user-select: none;
-  display: flex; 
-  justify-content: center; 
-  align-items: center; 
-  cursor: pointer
+.single-card-container:not(.small):hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.pushed {
+  --p-card-background: var(--p-primary-500);
+  color: var(--p-primary-contrast-color);
 }
 
 .single-card-container.small {
   width: 50px;
   height: 50px;
-  margin: 0 0 0 0;
+  font-size: 1rem;
+  margin: 0;
   cursor: not-allowed;
+  transition: none;
 }
 </style>
