@@ -13,8 +13,12 @@ export const usePokyStore = defineStore('pokyStore', {
         rooms: [] as string[],
         events: [] as string[],
         topic: '',
-        ws: null
+        ws: null,
+        observers: [] as string[]
     }),
+    getters: {
+        isWatching: (state): boolean => state.observers.includes(state.uuid)
+    },
     actions: {
         setUsername(username: string) { this.username = username; },
         setRoomId(roomId: string) { this.roomId = roomId; },
@@ -40,6 +44,18 @@ export const usePokyStore = defineStore('pokyStore', {
         
         removeParticipant(uuid: string) {
             this.participants = [...this.participants.filter(s => s.uuid != uuid)];
+        },
+
+        setObserver(uuid: string) {
+            if (!this.observers.includes(uuid)) this.observers.push(uuid);
+        },
+
+        unsetObserver(uuid: string) {
+            this.observers = this.observers.filter(u => u !== uuid);
+        },
+
+        isObserverUuid(uuid: string): boolean {
+            return this.observers.includes(uuid);
         }
     }
 })

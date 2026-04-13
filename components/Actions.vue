@@ -15,7 +15,9 @@ interface ScoreResult {
 }
 
 const computedScore = computed<ScoreResult>(() => {
-  const usersWhoVoted = pokyStore.participants.filter(p => ((p.currentPick ?? -1) >= 2));
+  const usersWhoVoted = pokyStore.participants.filter(p =>
+      ((p.currentPick ?? -1) >= 2) && !pokyStore.isObserverUuid(p.uuid)
+  );
   const count = usersWhoVoted.length;
 
   if (count === 0) {

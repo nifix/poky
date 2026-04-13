@@ -5,10 +5,13 @@ const pokyStore = usePokyStore();
 
 const isCardPushed = (cardId: number) => computed(() => pokyStore.getMySelf()?.currentPick == cardId);
 
-const votedCount = computed(() =>
-    pokyStore.participants.filter(p => (p.currentPick ?? -1) >= 0).length
+const nonObserverParticipants = computed(() =>
+    pokyStore.participants.filter(p => !pokyStore.isObserverUuid(p.uuid))
 );
-const totalCount = computed(() => pokyStore.participants.length);
+const votedCount = computed(() =>
+    nonObserverParticipants.value.filter(p => (p.currentPick ?? -1) >= 0).length
+);
+const totalCount = computed(() => nonObserverParticipants.value.length);
 const voteProgress = computed(() =>
     totalCount.value > 0 ? Math.round((votedCount.value / totalCount.value) * 100) : 0
 );
@@ -27,7 +30,10 @@ const voteProgress = computed(() =>
       </div>
     </template>
     <template #content>
-      <p class="vote-hint">Select your estimate for this story</p>
+      <p v-if="pokyStore.isWatching" class="vote-hint observer-hint">
+        <i class="pi pi-eye" /> You are observing — voting is disabled. You can see all picks live.
+      </p>
+      <p v-else class="vote-hint">Select your estimate for this story</p>
       <div id="cards-container">
         <SingleCard
             v-for="card in availableCards"
@@ -35,7 +41,7 @@ const voteProgress = computed(() =>
             :key="card.id"
             :text="card.text"
             :id="card.id"
-            :disabled="false"
+            :disabled="pokyStore.isWatching"
             :is-pushed="isCardPushed(card.id)" />
       </div>
     </template>
@@ -80,6 +86,13 @@ const voteProgress = computed(() =>
   font-size: 0.82rem;
   color: var(--p-text-muted-color);
   margin: 0 0 0.85rem;
+}
+
+.observer-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-style: italic;
 }
 
 #cards-container {

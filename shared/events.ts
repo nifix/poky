@@ -6,7 +6,8 @@
     LogMessage = "log-message",
     UserRemoved = "user-removed",
     UserLeft = "user-left",
-    TopicUpdated = 'topic-updated'
+    TopicUpdated = 'topic-updated',
+    ObserverToggled = 'observer-toggled'
 }
 
 export interface PokyEvent {

@@ -16,6 +16,7 @@
     "@primeuix/themes": "^1.0.3",
     "@primevue/forms": "^4.3.3",
     "@vueuse/core": "^13.1.0",
+    "canvas-confetti": "^1.9.4",
     "copy-to-clipboard": "^3.3.3",
     "engine.io": "^6.6.4",
     "nuxt": "^3.16.2",
@@ -29,6 +30,7 @@
     "vue-router": "^4.5.0"
   },
   "devDependencies": {
-    "@primevue/nuxt-module": "^4.3.3"
+    "@primevue/nuxt-module": "^4.3.3",
+    "@types/canvas-confetti": "^1.9.0"
   }
 }

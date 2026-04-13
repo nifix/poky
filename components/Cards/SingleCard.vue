@@ -3,15 +3,15 @@ import {getTextFromCardId} from "~/services/cardsService";
 import * as roomService from "~/services/roomService";
 
 const props = defineProps(["text", "isPushed", "id", "disabled", "uuid", "small"])
-const { text, id, isPushed, disabled, uuid, small } = props;
-defineExpose({ id, isPushed, text, disabled, uuid, small })
+const { text, id, isPushed, uuid, small } = props;
+defineExpose({ id, isPushed, text, uuid, small })
 
 const ws = useWebSocket();
 const pokyStore = usePokyStore();
 const shouldBeSmall = computed(() => !!props.small);
 
 async function onClick(): Promise<void> {
-  if (!disabled && (!pokyStore.revealed)) {
+  if (!props.disabled && (!pokyStore.revealed)) {
     pokyStore.setMyPick(id);
     await ws.notify.userVoted(pokyStore.uuid, pokyStore.roomId, pokyStore.getMySelf()?.currentPick ?? -1);
     await roomService.updateCurrentPick<number>(pokyStore.roomId, pokyStore.uuid, pokyStore.getMySelf()?.currentPick ?? -1);
@@ -26,10 +26,15 @@ const cardDisplay = computed<CardDisplay>(() => {
 
   const participant = pokyStore.participants.find(p => p.uuid === props.uuid);
 
+  // Observer participant: always show eye icon (they don't vote)
+  if (pokyStore.isObserverUuid(props.uuid ?? ''))
+    return { type: 'icon', icon: 'pi-eye', colorClass: 'icon--observer' };
+
   if ((participant?.currentPick == null || participant?.currentPick === -1) && !pokyStore.revealed && !pokyStore.votingDisabled)
     return { type: 'icon', icon: 'pi-clock', colorClass: 'icon--pending' };
 
-  if (participant?.currentPick != null && participant?.currentPick >= 0 && !pokyStore.revealed && !pokyStore.votingDisabled)
+  // Show actual pick if votes are revealed OR the current viewer is an observer
+  if (participant?.currentPick != null && participant?.currentPick >= 0 && !pokyStore.revealed && !pokyStore.votingDisabled && !pokyStore.isWatching)
     return { type: 'icon', icon: 'pi-check', colorClass: 'icon--voted' };
 
   return { type: 'text', value: getTextFromCardId(participant?.currentPick ?? -1) };
@@ -42,6 +47,7 @@ const cardDisplay = computed<CardDisplay>(() => {
       :class="{
         'playing-card--selected': isPushed,
         'playing-card--small': shouldBeSmall,
+        'playing-card--disabled': props.disabled && !shouldBeSmall,
       }"
       @click="onClick">
     <template v-if="!shouldBeSmall">
@@ -149,5 +155,22 @@ const cardDisplay = computed<CardDisplay>(() => {
 
 .icon--voted {
   color: var(--p-primary-500);
+}
+
+.icon--observer {
+  color: var(--p-text-muted-color);
+  opacity: 0.6;
+}
+
+.playing-card--disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(40%);
+}
+
+.playing-card--disabled:hover {
+  transform: none !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.07), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+  border-color: var(--p-surface-border) !important;
 }
 </style>

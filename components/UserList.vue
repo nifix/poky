@@ -27,6 +27,19 @@ async function removeUser(uuid: string) {
     await ws.notify.removeUser(uuid, pokyStore.roomId);
 }
 
+async function toggleObserver(): Promise<void> {
+  const isNowObserver = !pokyStore.isWatching;
+  
+  if (isNowObserver) {
+    pokyStore.setObserver(pokyStore.uuid);
+    pokyStore.setMyPick(-1);
+  } else {
+    pokyStore.unsetObserver(pokyStore.uuid);
+  }
+  
+  await ws.notify.observerToggled(pokyStore.uuid, pokyStore.roomId, isNowObserver);
+}
+
 onMounted(() => getUsers())
 </script>
 
@@ -59,16 +72,30 @@ onMounted(() => getUsers())
               :small="true"
               :is-pushed="false"
           />
-          <span class="participant-name">{{ user.username }}</span>
-          <Button
-              v-if="pokyStore.uuid !== user.uuid"
-              severity="danger"
-              text
-              rounded
-              icon="pi pi-times"
-              size="small"
-              class="ml-auto"
-              @click="removeUser(user.uuid)" />
+          <span
+              class="participant-name"
+              :class="{ 'participant-name--observer': pokyStore.isObserverUuid(user.uuid) }">
+            {{ user.username }}
+          </span>
+          <div class="participant-actions">
+            <Button
+                v-if="pokyStore.uuid === user.uuid"
+                :severity="pokyStore.isWatching ? 'warn' : 'secondary'"
+                text
+                rounded
+                :icon="pokyStore.isWatching ? 'pi pi-eye-slash' : 'pi pi-eye'"
+                size="small"
+                v-tooltip.left="pokyStore.isWatching ? 'Leave observer mode' : 'Observe (no voting)'"
+                @click="toggleObserver" />
+            <Button
+                v-if="pokyStore.uuid !== user.uuid"
+                severity="danger"
+                text
+                rounded
+                icon="pi pi-times"
+                size="small"
+                @click="removeUser(user.uuid)" />
+          </div>
         </div>
       </div>
     </template>
@@ -125,5 +152,17 @@ onMounted(() => getUsers())
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.participant-name--observer {
+  font-style: italic;
+  color: var(--p-text-muted-color);
+}
+
+.participant-actions {
+  margin-left: auto;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
 }
 </style>

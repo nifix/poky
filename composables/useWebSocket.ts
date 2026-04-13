@@ -3,6 +3,8 @@ import type RoomUserModel from "#shared/models/rooms/RoomUserModel";
 import * as signalR from "@microsoft/signalr";
 import {HubConnectionState} from "@microsoft/signalr";
 import {useApi} from "~/composables/useApi";
+import {fireConfettiFireworks} from "~/composables/useConfetti";
+import {getCardById} from "~/services/cardsService";
 
 const ws = shallowRef<signalR.HubConnection | null>(null);
 const isConnected = ref(false);
@@ -23,6 +25,7 @@ interface UseWebSocketReturn {
         removeUser: (uuid: string, roomId: string) => Promise<void>;
         userLeft: (uuid: string, roomId: string) => Promise<void>;
         topicUpdate: (roomId: string, uuid: string, topic: string) => Promise<void>;
+        observerToggled: (uuid: string, roomId: string, isObserver: boolean) => Promise<void>;
     };
 }
 
@@ -197,9 +200,33 @@ export const useWebSocket = (): UseWebSocketReturn => {
                     const topicUpdatedMessage = event as TopicUpdatedMessage;
                     manageTopicUpdatedMessage(topicUpdatedMessage);
                     break;
+                case EventKind.ObserverToggled:
+                    const observerToggledMessage = event as ObserverToggledMessage;
+                    manageObserverToggledMessage(observerToggledMessage);
+                    break;
             }
         } catch (error) {
             console.error("Failed to parse WebSocket message:", error, event);
+        }
+    }
+
+    /**
+     * Handles the toggling of an observer status and updates the store with the provided message data.
+     * If the message's room ID does not match the store's room ID, the method returns without performing any operations.
+     *
+     * @param {ObserverToggledMessage} message - The message containing details about the observer toggle,
+     * including the room ID, user UUID, and the observer status.
+     * @return {void} This method does not return a value.
+     */
+    function manageObserverToggledMessage(message: ObserverToggledMessage): void {
+        if (pokyStore.roomId != message.roomId) return;
+
+        if (message.isObserver) {
+            pokyStore.setObserver(message.uuid);
+            const participant = pokyStore.getParticipant(message.uuid);
+            if (participant) participant.currentPick = -1;
+        } else {
+            pokyStore.unsetObserver(message.uuid);
         }
     }
 
@@ -286,12 +313,30 @@ export const useWebSocket = (): UseWebSocketReturn => {
 
     /**
      * Manages the reveal votes message by updating the `revealed` status in the `pokyStore` if the room ID matches.
+     * If all participants who cast a real vote (not ? or ☕) picked the same card, fires a confetti fireworks effect.
      *
      * @param {RevealVotesMessage} message - The message containing information about the room and the reveal status.
      */
     function manageRevealVotesMessage(message: RevealVotesMessage) : void {
-        if (pokyStore.roomId == message.roomId)
-            pokyStore.revealed = true;
+        if (pokyStore.roomId != message.roomId)
+            return;
+
+        pokyStore.revealed = true;
+
+        const realVoters = pokyStore.participants.filter(p => {
+            const pick = p.currentPick ?? -1;
+            if (pick < 2) return false; // -1 = no vote, 0 = ?, 1 = ☕
+            const card = getCardById(pick);
+            return card?.value != null;
+        });
+
+        if (realVoters.length > 1) {
+            const firstValue = getCardById(realVoters[0].currentPick!)?.value;
+            const allSame = realVoters.every(p => getCardById(p.currentPick!)?.value === firstValue);
+            
+            if (allSame)
+                fireConfettiFireworks(5000);
+        }
     }
 
     /**
@@ -505,6 +550,27 @@ export const useWebSocket = (): UseWebSocketReturn => {
     }
 
     /**
+     * Notifies the room that the current user has toggled their observer status.
+     */
+    async function notifyObserverToggled(uuid: string, roomId: string, isObserver: boolean): Promise<void> {
+        const participant = pokyStore.getParticipant(uuid);
+        
+        await sendMessage(<ObserverToggledMessage>{
+            kind: EventKind.ObserverToggled,
+            uuid: uuid,
+            roomId: roomId,
+            isObserver: isObserver
+        });
+        
+        await sendMessage(<LogMessage>{
+            kind: EventKind.LogMessage,
+            uuid: uuid,
+            roomId: roomId,
+            message: `(${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}) <b>${participant!.username}</b> ${isObserver ? 'is now observing 👁️' : 'is back in the game 🃏'}.`
+        });
+    }
+
+    /**
      * Disconnects the shared WebSocket connection.
      *
      * @param {boolean} [force=false] - If true, forces the WebSocket connection to close.
@@ -534,7 +600,8 @@ export const useWebSocket = (): UseWebSocketReturn => {
             revealVotes: notifyRevealVotes,
             removeUser: notifyRemoveUser,
             userLeft: notifyUserLeft,
-            topicUpdate: notifyTopicUpdate
+            topicUpdate: notifyTopicUpdate,
+            observerToggled: notifyObserverToggled
         }
     };
 };
@@ -556,3 +623,4 @@ export interface LogMessage extends WSMessage { message: string }
 export interface RemoveUserMessage extends WSMessage {}
 export interface UserLeftMessage extends WSMessage {}
 export interface TopicUpdatedMessage extends WSMessage { topic: string }
+export interface ObserverToggledMessage extends WSMessage { isObserver: boolean }
