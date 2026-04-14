@@ -29,7 +29,7 @@ function copyUserId(): void {
 
       <div id="header-brand">
         <div id="logo-wrapper">
-          <img src="/n2jsoft.jpg" alt="N2JSoft" id="header-logo" />
+          <img src="/poky.png" alt="Poky" id="header-logo" />
         </div>
         <span id="header-title">Sprint Poker</span>
         <div class="live-dot" v-tooltip.bottom="'Connected'" />

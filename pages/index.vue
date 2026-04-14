@@ -96,8 +96,8 @@ onMounted(async () => {
       <!-- Left: Branded hero panel -->
       <div id="hero-panel">
         <div id="hero-content">
-          <img src="/n2jsoft.jpg" alt="N2J Soft logo" id="hero-logo" />
-          <h1 id="hero-title">N2J Poky</h1>
+          <img src="/poky.png" alt="Poky logo" id="hero-logo" />
+          <h1 id="hero-title">Poky</h1>
           <p id="hero-tagline">Sprint Planning, simplified.</p>
           <div id="hero-features">
             <div class="feature-item">
